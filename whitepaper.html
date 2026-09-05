@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Switch — Whitepaper</title>
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F4EFE9; --paper:#FBF8F4; --ink:#0B0D10; --copper:#D9662B;
+    /* --copper is 3.1:1 on paper — fine for display sizes, fails AA as small text.
+       --copper-ink is the same hue at 5.2:1, for anything under ~18px. */
+    --copper-ink:#A8501C;
+    --teal:#2E9C93; --muted:#6E6862; --line:#E2DAD0; --line2:#EFE8DF;
+    --serif:'Instrument Serif','Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    --sans:'Inter',-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono','DejaVu Sans Mono',Menlo,monospace;
+    --nav:288px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--cream);color:var(--ink);font-family:var(--sans);
+       font-size:16.5px;line-height:1.72;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--copper);color:#fff}
+  /* keyboard users need to see where they are */
+  :focus-visible{outline:2px solid var(--copper-ink);outline-offset:3px;border-radius:3px}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+      transition-duration:.001ms!important;scroll-behavior:auto!important}
+  }
+
+  /* ---------------- sidebar ---------------- */
+  nav.side{position:fixed;top:0;left:0;bottom:0;width:var(--nav);background:var(--paper);
+           border-right:1px solid var(--line);overflow-y:auto;padding:30px 0 40px;z-index:40}
+  .brand{display:flex;align-items:center;gap:12px;padding:0 26px 22px;
+         border-bottom:1px solid var(--line2);margin-bottom:20px}
+  .brand .wm{font-family:var(--mono);font-weight:700;font-size:23px;letter-spacing:-.04em}
+  .brand .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--muted);
+              text-transform:uppercase;margin-top:3px}
+  .toc{padding:0 14px}
+  .toc a.sec{display:flex;align-items:center;min-height:44px;padding:8px 12px;border-radius:7px;font-size:14.5px;
+             color:#3E3A36;font-weight:500;transition:background .14s,color .14s}
+  .toc a.sec:hover{background:#F1EAE1;color:var(--ink)}
+  .toc a.sec.on{background:var(--ink);color:var(--paper)}
+  .toc a.sec .n{font-family:var(--mono);font-size:12px;color:var(--muted);margin-right:9px}
+  .toc a.sec.on .n{color:#B9B2AA}
+  .toc .subs{margin:2px 0 8px 34px;border-left:1px solid var(--line);padding-left:12px}
+  .toc .subs a{display:flex;align-items:center;min-height:44px;font-size:13.2px;color:var(--muted)}
+  .toc .subs a:hover{color:var(--copper-ink)}
+  .sidefoot{margin-top:26px;padding:18px 26px 0;border-top:1px solid var(--line2);
+            font-size:12px;color:var(--muted);line-height:1.6}
+
+  /* ---------------- content ---------------- */
+  main{margin-left:var(--nav);padding:0 0 120px}
+  .col{max-width:790px;margin:0 auto;padding:0 48px}
+  header.top{padding:76px 0 30px}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.24em;text-transform:uppercase;
+           color:var(--copper-ink);display:flex;align-items:center;gap:13px}
+  .eyebrow .ln{width:36px;height:1.5px;background:var(--copper)}
+  h1.doc{font-family:var(--serif);font-size:64px;line-height:1.02;letter-spacing:-.015em;
+         margin:18px 0 14px;font-weight:400}
+  .lede{font-size:20px;color:#43403C;line-height:1.6;max-width:660px}
+  .meta{margin-top:26px;font-family:var(--mono);font-size:12.5px;color:var(--muted);
+        display:flex;gap:22px;flex-wrap:wrap}
+
+  section{padding-top:64px}
+  h2{font-family:var(--serif);font-size:40px;line-height:1.1;letter-spacing:-.012em;
+     font-weight:400;margin-bottom:8px;scroll-margin-top:24px}
+  h2 .num{font-family:var(--mono);font-size:15px;color:var(--copper-ink);display:block;
+          margin-bottom:12px;letter-spacing:.12em;font-weight:700}
+  h3{font-size:19px;font-weight:650;margin:38px 0 10px;letter-spacing:-.005em;scroll-margin-top:20px}
+  h4{font-size:15.5px;font-weight:650;margin:26px 0 8px;color:#2E2B28}
+  p{margin:14px 0;color:#302D2A}
+  ul,ol{margin:14px 0 14px 22px}
+  li{margin:8px 0;color:#302D2A}
+  li::marker{color:var(--copper)}
+  strong{font-weight:640;color:var(--ink)}
+  em{font-style:italic}
+  code{font-family:var(--mono);font-size:.88em;background:#EDE5DB;padding:2px 6px;
+       border-radius:4px;color:#5A3418}
+  hr{border:none;border-top:1px solid var(--line);margin:46px 0}
+
+  .rule{display:flex;align-items:center;gap:14px;margin:52px 0 0}
+  .rule .l{flex:1;height:1px;background:var(--line)}
+  .rule .d{width:5px;height:5px;background:var(--copper);border-radius:50%}
+
+  /* formula block */
+  .math{background:var(--ink);color:#F0EDE8;border-radius:12px;padding:24px 26px;
+        font-family:var(--mono);font-size:14.5px;line-height:1.95;margin:22px 0;overflow-x:auto}
+  .math .c{color:#D9662B}
+  .math .g{color:#8A929C}
+  .math .w{color:#fff;font-weight:700}
+  .where{font-size:14.5px;color:var(--muted);margin:-6px 0 22px}
+  .where b{color:#302D2A;font-weight:600}
+
+  /* callouts */
+  .note{border-left:3px solid var(--copper);background:#FAF3EC;border-radius:0 10px 10px 0;
+        padding:18px 22px;margin:24px 0;font-size:15px}
+  .note .h{font-weight:650;color:#A8501C;margin-bottom:5px;font-size:14px;
+           letter-spacing:.02em;text-transform:uppercase;font-family:var(--mono);font-size:11.5px}
+  .note.grey{border-left-color:#9A938B;background:#F2EEE9}
+  .note.grey .h{color:#4E4943}
+
+  /* tables */
+  .tw{overflow-x:auto;margin:24px 0}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:520px}
+  th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+     text-transform:uppercase;color:var(--muted);font-weight:600;
+     padding:0 14px 11px 0;border-bottom:1px solid var(--ink)}
+  td{padding:12px 14px 12px 0;border-bottom:1px solid var(--line);color:#302D2A;vertical-align:top}
+  td.mono,th.mono{font-family:var(--mono)}
+  tr td:last-child,tr th:last-child{padding-right:0}
+  .num-col{text-align:right;font-family:var(--mono)}
+
+  /* architecture diagram */
+  .diagram{background:var(--paper);border:1px solid var(--line);border-radius:14px;
+           padding:30px 26px;margin:26px 0}
+  .flow{display:flex;flex-direction:column;gap:0}
+  .fstep{display:flex;gap:18px;align-items:flex-start;padding:16px 0}
+  .fstep + .fstep{border-top:1px dashed var(--line)}
+  .fstep .idx{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--copper-ink);
+              background:#F6E7DA;width:30px;height:30px;border-radius:50%;display:flex;
+              align-items:center;justify-content:center;flex:0 0 auto;margin-top:2px}
+  .fstep .bd .t{font-weight:650;font-size:15.5px}
+  .fstep .bd .s{font-size:14px;color:var(--muted);margin-top:3px;line-height:1.55}
+  .fstep .bd .c{font-family:var(--mono);font-size:12.5px;color:var(--copper-ink);margin-top:5px}
+
+  .split-bar{display:flex;height:52px;border-radius:9px;overflow:hidden;margin:22px 0 10px}
+  .split-bar div{display:flex;align-items:center;justify-content:center;color:#fff;
+                 font-family:var(--mono);font-size:13px;font-weight:700}
+
+  .kv{display:grid;grid-template-columns:190px 1fr;gap:0;margin:20px 0;font-size:14.5px}
+  .kv .k{font-family:var(--mono);font-size:12.5px;color:var(--muted);padding:11px 0;
+         border-bottom:1px solid var(--line2)}
+  .kv .v{padding:11px 0;border-bottom:1px solid var(--line2);color:#302D2A}
+
+  footer{margin-left:var(--nav);border-top:1px solid var(--line);padding:40px 0 70px}
+  footer .col{font-size:12.5px;color:var(--muted);line-height:1.75}
+
+  .toplink{position:fixed;right:22px;bottom:22px;background:var(--ink);color:var(--cream);
+           font-family:var(--mono);font-size:11px;letter-spacing:.12em;padding:10px 16px;
+           border-radius:99px;text-transform:uppercase;z-index:50;opacity:.9;
+           display:inline-flex;align-items:center;min-height:44px}
+
+  @media (max-width:1080px){
+    :root{--nav:0px}
+    nav.side{position:static;width:auto;border-right:none;border-bottom:1px solid var(--line)}
+    .toc{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+    .toc .subs{display:none}
+    main,footer{margin-left:0}
+    .col{padding:0 26px}
+    h1.doc{font-size:44px} h2{font-size:31px}
+    .kv{grid-template-columns:1fr}
+    .kv .k{border-bottom:none;padding-bottom:0}
+  }
+</style>
+</head>
+<body>
+
+<nav class="side">
+  <div class="brand">
+    <svg width="42" height="21" viewBox="0 0 128 64" aria-hidden="true"><rect x="4" y="4" width="120" height="56" rx="28" fill="none" stroke="#0B0D10" stroke-width="8"/><line x1="28" y1="32" x2="52" y2="32" stroke="#0B0D10" stroke-width="8" stroke-linecap="round" opacity=".34"/><line x1="64" y1="32" x2="72" y2="32" stroke="#0B0D10" stroke-width="8" stroke-linecap="round" opacity=".16"/><circle cx="96" cy="32" r="16" fill="#D9662B"/></svg>
+    <div>
+      <div class="wm">switch<span style="color:#D9662B">.</span></div>
+      <div class="tag">Whitepaper v1</div>
+    </div>
+  </div>
+
+  <div class="toc">
+    <a class="sec" href="#s1"><span class="n">1.</span>Abstract</a>
+    <a class="sec" href="#s2"><span class="n">2.</span>The Problem</a>
+    <div class="subs">
+      <a href="#s2-1">2.1 Reflexive yield</a>
+      <a href="#s2-2">2.2 The claim tax</a>
+      <a href="#s2-3">2.3 Discretion as liability</a>
+    </div>
+    <a class="sec" href="#s3"><span class="n">3.</span>Protocol Architecture</a>
+    <div class="subs">
+      <a href="#s3-1">3.1 Contracts</a>
+      <a href="#s3-2">3.2 The hourly cycle</a>
+      <a href="#s3-3">3.3 Trust boundaries</a>
+    </div>
+    <a class="sec" href="#s4"><span class="n">4.</span>The Switchboard</a>
+    <div class="subs">
+      <a href="#s4-1">4.1 Eligible set</a>
+      <a href="#s4-2">4.2 Metrics</a>
+      <a href="#s4-3">4.3 Normalisation</a>
+      <a href="#s4-4">4.4 Scoring &amp; selection</a>
+      <a href="#s4-5">4.5 Degenerate rounds</a>
+    </div>
+    <a class="sec" href="#s5"><span class="n">5.</span>Push Settlement</a>
+    <div class="subs">
+      <a href="#s5-1">5.1 Time-weighted balance</a>
+      <a href="#s5-2">5.2 Allocation</a>
+      <a href="#s5-3">5.3 Merkle commitment</a>
+      <a href="#s5-4">5.4 Execution &amp; slippage</a>
+      <a href="#s5-5">5.5 Risk model</a>
+    </div>
+    <a class="sec" href="#s6"><span class="n">6.</span>Revenue Model</a>
+    <a class="sec" href="#s7"><span class="n">7.</span>Fee Architecture</a>
+    <a class="sec" href="#s8"><span class="n">8.</span>Roadmap</a>
+    <a class="sec" href="#s9"><span class="n">9.</span>Conclusion</a>
+  </div>
+
+  <div class="sidefoot"><a href="index.html" style="display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#A8501C;border:1px solid var(--line);border-radius:99px;padding:13px 15px;margin-bottom:14px">&#8592; switch.home</a>
+  </div>
+</nav>
+
+<main>
+<div class="col">
+
+<header class="top">
+  <div class="eyebrow"><span class="ln"></span>Protocol Specification</div>
+  <h1 class="doc">Switch</h1>
+  <p class="lede">An autonomous protocol that converts trading fees into the market's
+    strongest tokenized equity and settles it directly into holder balances — once an hour,
+    with no claim, no custodian, and no privileged key.</p>
+  <div class="meta">
+    <span>Version 1.0 · Specification</span>
+    <span>Robinhood Chain · 4663</span>
+    <span>$SWTCH</span>
+  </div>
+</header>
+
+<div class="note grey">
+  <div class="h">Status</div>
+  Switch is pre-launch. This document specifies the protocol in full; figures in §6 are
+  illustrative arithmetic, not forecasts.
+</div>
+
+<!-- ======================= 1 ======================= -->
+<section id="s1">
+  <h2><span class="num">01</span>Abstract</h2>
+
+  <p>Token holders today face a binary choice: hold a reward token that pays in more of itself,
+  or hold a productive asset and forfeit any claim on protocol revenue. Reward tokens
+  denominated in their own supply are reflexive by construction — the yield is funded by the
+  next buyer, and it evaporates the moment inflows stop. The alternative, a discretionary
+  treasury that acquires real assets on holders' behalf, replaces one problem with another:
+  it requires a manager, a mandate, and a set of privileged keys that can be turned against
+  the people they were built for.</p>
+
+  <p>Separately, reward distribution is almost universally claim-gated. Holders must submit a
+  transaction, pay gas, and remember to do it. Claims that cost more than they return are never
+  made, and the unclaimed remainder accrues to whoever is large or sophisticated enough to
+  bother. A mechanism advertised as passive is, in practice, a tax on inattention.</p>
+
+  <p>Switch addresses both as a single autonomous system on Robinhood Chain:</p>
+
+  <ol>
+    <li><strong>The Switchboard</strong> — a deterministic selection engine that scores every
+    eligible tokenized equity once per hour against a fixed, public formula and commits the
+    round's entire purchase budget to the single highest-scoring instrument. No manager, no
+    mandate, no discretion.</li>
+    <li><strong>Push settlement</strong> — a Merkle-committed distribution path that delivers
+    the purchased equity directly into holder balances, with gas paid by the protocol. There
+    is nothing to claim, stake, or lock; holding is the entire action.</li>
+  </ol>
+
+  <p>The thesis is simple: <strong>rewards should be denominated in assets the protocol does not
+  issue, and selection should be arithmetic anyone can reproduce.</strong> This document
+  specifies the mechanism design, the mathematics governing scoring and settlement, and the
+  risk model underlying both systems.</p>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 2 ======================= -->
+<section id="s2">
+  <h2><span class="num">02</span>The Problem</h2>
+
+  <h3 id="s2-1">2.1 Reflexive yield</h3>
+  <p>The dominant reward primitive in on-chain markets is redistribution denominated in the
+  protocol's own token. A holder receives more units of the thing they already hold. Whether
+  that constitutes yield depends entirely on whether the token's price holds — which depends
+  on continued net inflow, which the distribution itself is supposed to attract.</p>
+
+  <p>The circularity is not incidental; it is the mechanism. Nominal APR can be set arbitrarily
+  high because it is denominated in a unit the protocol mints or recycles at will. Real return
+  to the holder is:</p>
+
+  <div class="math">
+    r<span class="g">_real</span> <span class="c">=</span> (1 + r<span class="g">_nominal</span>) <span class="c">×</span> (P<span class="g">_t+1</span> / P<span class="g">_t</span>) <span class="c">−</span> 1
+  </div>
+  <p class="where">Where <b>r_nominal</b> is the advertised emission rate and <b>P</b> is the
+  token's own price. Any emission funded by dilution pushes the second term down as it pushes
+  the first term up. The two are not independent variables.</p>
+
+  <p>A distribution denominated in an asset the protocol does not issue breaks the coupling.
+  The value delivered is exogenous: it does not depend on the protocol's own price, cannot be
+  inflated by emitting more of it, and does not reverse when inflows slow. Distribution volume
+  falls with trading activity — but what has already been delivered stays delivered.</p>
+
+  <h3 id="s2-2">2.2 The claim tax</h3>
+  <p>Claim-gated rewards impose a fixed cost on a variable benefit. A holder claims only when</p>
+
+  <div class="math">
+    E[value<span class="g">_claim</span>] <span class="c">&gt;</span> gas<span class="g">_cost</span> <span class="c">+</span> attention<span class="g">_cost</span>
+  </div>
+
+  <p>Because gas is roughly constant regardless of position size, the threshold is regressive:
+  it is trivially cleared by large holders and frequently unmet by small ones. The result is a
+  systematic transfer from small and inattentive holders to large and automated ones — before
+  any consideration of the mechanism's stated distribution.</p>
+
+  <p>Push settlement removes the inequality entirely. If the protocol delivers the asset and
+  pays the gas, there is no threshold to clear, no expiry to miss, and no dust left stranded
+  in a distributor contract.</p>
+
+  <h3 id="s2-3">2.3 Discretion as liability</h3>
+  <p>A protocol that buys real assets must decide <em>which</em> assets. The conventional answer
+  is a treasury with a mandate and a multisig. This introduces three liabilities that are
+  frequently understated:</p>
+
+  <ul>
+    <li><strong>Key risk.</strong> Any address that can direct purchases can direct them
+    elsewhere. Multisig reduces the probability of misuse; it does not remove the capability.</li>
+    <li><strong>Mandate drift.</strong> A discretionary mandate is renegotiated under stress,
+    which is precisely when holders are least able to exit.</li>
+    <li><strong>Unverifiability.</strong> Holders cannot check a judgement. They can only check
+    an outcome, after the fact, with no counterfactual.</li>
+  </ul>
+
+  <p>A deterministic rule inverts all three. If selection is a published function of public
+  inputs, there is no key to compromise, no mandate to renegotiate, and every past decision can
+  be independently recomputed and verified against what the protocol actually did.</p>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 3 ======================= -->
+<section id="s3">
+  <h2><span class="num">03</span>Protocol Architecture</h2>
+
+  <p>Switch is four immutable contracts on Robinhood Chain (chain ID 4663) plus an off-chain
+  scoring worker whose output is fully reproducible from public data. The worker cannot choose
+  a winner; it can only compute the one the formula already determines, and any observer can
+  detect a deviation.</p>
+
+  <h3 id="s3-1">3.1 Contracts</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:180px">Contract</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">SwitchToken</td><td>ERC-20. Fixed supply of 1,000,000,000. Enforces the
+        1.5% maximum wallet on transfer. No mint, no burn authority, no pause, no blacklist.</td></tr>
+      <tr><td class="mono">SwitchHook</td><td>Uniswap v4 hook. Captures 3% of each swap in WETH at
+        execution and splits it across three immutable destinations compiled into the bytecode.</td></tr>
+      <tr><td class="mono">SwitchLock</td><td>Holds protocol-owned liquidity. Enforces a rolling
+        60-day lock on each deposited position; no early-withdrawal path exists.</td></tr>
+      <tr><td class="mono">SwitchRewards</td><td>Merkle distributor. Accepts an hourly root, and
+        pushes the round's equity allocation to holder addresses in batches.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 id="s3-2">3.2 The hourly cycle</h3>
+  <div class="diagram">
+    <div class="flow">
+      <div class="fstep"><div class="idx">01</div><div class="bd">
+        <div class="t">Fee accrual</div>
+        <div class="s">Throughout the hour, every swap routed through the pool contributes 3%
+          in WETH. 60% of that accrues to the round's purchase budget.</div>
+        <div class="c">SwitchHook → budget</div></div></div>
+      <div class="fstep"><div class="idx">02</div><div class="bd">
+        <div class="t">Close of hour</div>
+        <div class="s">The budget is sealed at the hour boundary. Fees arriving after the
+          boundary belong to the next round, not this one.</div>
+        <div class="c">B(t) fixed at t = hh:00:00 UTC</div></div></div>
+      <div class="fstep"><div class="idx">03</div><div class="bd">
+        <div class="t">Scoring</div>
+        <div class="s">Every instrument in the eligible set is scored on the hour that just
+          closed. The highest score wins. Ties resolve deterministically.</div>
+        <div class="c">w(t) = argmax S_i(t)</div></div></div>
+      <div class="fstep"><div class="idx">04</div><div class="bd">
+        <div class="t">Acquisition</div>
+        <div class="s">The full budget is used to acquire the winner, subject to a slippage
+          bound. A failed or bounded-out execution rolls the budget forward.</div>
+        <div class="c">Q = quantity acquired</div></div></div>
+      <div class="fstep"><div class="idx">05</div><div class="bd">
+        <div class="t">Allocation &amp; commitment</div>
+        <div class="s">Q is divided pro rata by time-weighted balance over the hour. The
+          resulting Merkle root is committed on-chain alongside the full score table.</div>
+        <div class="c">root(t) → SwitchRewards</div></div></div>
+      <div class="fstep"><div class="idx">06</div><div class="bd">
+        <div class="t">Push settlement</div>
+        <div class="s">Allocations are pushed to holder addresses in batches. Gas is paid from
+          the operations allocation. The holder does nothing.</div>
+        <div class="c">transfer → holder</div></div></div>
+    </div>
+  </div>
+
+  <h3 id="s3-3">3.3 Trust boundaries</h3>
+  <p>It is worth being precise about what must be trusted and what must not.</p>
+  <div class="kv">
+    <div class="k">Requires no trust</div>
+    <div class="v">Fee capture and splitting, the wallet cap, the liquidity lock, supply
+      integrity. These are enforced by immutable bytecode with no privileged caller.</div>
+    <div class="k">Verifiable, not trusted</div>
+    <div class="v">Winner selection. The worker computes it, but the inputs and the function are
+      public — any third party can recompute every historical round and prove a mismatch.</div>
+    <div class="k">Requires trust</div>
+    <div class="v">Liveness. If the worker halts, rounds do not execute and budgets accumulate
+      unspent. Funds are not at risk, but distribution pauses. This is the protocol's principal
+      centralisation surface and is addressed in §8.</div>
+    <div class="k">External dependency</div>
+    <div class="v">Chainlink price feeds and the underlying tokenized-equity issuers. Switch
+      inherits the liveness and solvency assumptions of both.</div>
+  </div>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 4 ======================= -->
+<section id="s4">
+  <h2><span class="num">04</span>The Switchboard</h2>
+  <p>The Switchboard is the selection engine. It answers exactly one question per hour — which
+  instrument receives the entire budget — and it answers it with arithmetic.</p>
+
+  <h3 id="s4-1">4.1 Eligible set</h3>
+  <p>Let <code>E(t)</code> be the set of instruments eligible in round <code>t</code>. Membership
+  requires all of:</p>
+  <ul>
+    <li>A live Chainlink price feed whose last update is within its declared heartbeat. A stale
+    feed removes the instrument for that round rather than being extrapolated.</li>
+    <li>Realised quote-side volume over the hour of at least <code>V_min</code>, excluding
+    instruments too thin to absorb the budget without material impact.</li>
+    <li>Available depth such that the budget represents no more than <code>δ_max</code> of
+    quotable liquidity at the acquisition bound in §5.4.</li>
+  </ul>
+  <p>Eligibility is evaluated per round. An instrument dropping out of <code>E(t)</code> has no
+  effect on allocations already settled.</p>
+
+  <h3 id="s4-2">4.2 Metrics</h3>
+  <p>For each instrument <code>i ∈ E(t)</code>, four raw quantities are measured over the hour
+  that just closed:</p>
+  <div class="math">
+    m<span class="g">_i</span>  <span class="c">=</span>  (P<span class="g">_close</span> <span class="c">−</span> P<span class="g">_open</span>) / P<span class="g">_open</span>        <span class="g">— momentum, the hourly return</span><br>
+    p<span class="g">_i</span>  <span class="c">=</span>  V<span class="g">_buy</span> / V<span class="g">_total</span>                  <span class="g">— buy pressure, buyer share of volume</span><br>
+    v<span class="g">_i</span>  <span class="c">=</span>  V<span class="g">_total</span>                          <span class="g">— volume, quote-denominated</span><br>
+    σ<span class="g">_i</span>  <span class="c">=</span>  stdev( r<span class="g">_1</span> … r<span class="g">_60</span> )               <span class="g">— realised volatility of minute returns</span>
+  </div>
+
+  <h3 id="s4-3">4.3 Normalisation</h3>
+  <p>The four metrics are dimensionally incompatible — a return, a ratio, a currency amount and
+  a standard deviation cannot be summed directly. Each is therefore converted to a
+  cross-sectional z-score across <code>E(t)</code> and winsorised at ±3 to prevent a single
+  outlier from dominating a round:</p>
+
+  <div class="math">
+    ẑ(x<span class="g">_i</span>) <span class="c">=</span> clamp( (x<span class="g">_i</span> <span class="c">−</span> μ<span class="g">_x</span>) / s<span class="g">_x</span> , <span class="c">−</span>3, <span class="c">+</span>3 )
+  </div>
+  <p class="where">Where <b>μ_x</b> and <b>s_x</b> are the mean and sample standard deviation of
+  metric <b>x</b> across the eligible set <em>in that round only</em>. No cross-round state
+  enters the calculation, which is what makes each round independently reproducible from a
+  single hour of public data.</p>
+
+  <p>Volume enters as <code>ln v</code> rather than <code>v</code>. Traded volume is heavy-tailed;
+  without the log transform a single high-volume instrument would produce a z-score large enough
+  to override the other three terms in every round it appeared.</p>
+
+  <h3 id="s4-4">4.4 Scoring and selection</h3>
+  <div class="math">
+    <span class="w">S<span class="g">_i</span>(t)  =  0.40·ẑ(m<span class="g">_i</span>)  +  0.35·ẑ(p<span class="g">_i</span>)  +  0.15·ẑ(ln v<span class="g">_i</span>)  −  0.10·ẑ(σ<span class="g">_i</span>)</span><br><br>
+    <span class="w">w(t)  =  argmax<span class="g">_{i ∈ E(t)}</span>  S<span class="g">_i</span>(t)</span>
+  </div>
+
+  <p>The weights encode a deliberate stance. Momentum and buy pressure together carry 0.75 —
+  the engine is a trend follower, not a value screen. Volume at 0.15 acts primarily as a
+  tie-breaker between instruments with similar price action. Volatility enters negatively,
+  which means the engine prefers the calmer of two otherwise equivalent movers rather than
+  chasing the most violent one.</p>
+
+  <p>Ties are resolved deterministically, never randomly: highest <code>ẑ(m)</code> first, then
+  highest <code>ẑ(p)</code>, then ascending token address. Random tie-breaking would make
+  historical rounds unverifiable, which would defeat the purpose of a public formula.</p>
+
+  <p>Note that no term in <code>S</code> references the protocol's own token, treasury balance,
+  or prior winners. The engine cannot be steered by anyone's position, including the team's.</p>
+
+  <h3 id="s4-5">4.5 Degenerate rounds</h3>
+  <p>A pure <code>argmax</code> always buys something, including in an hour when every eligible
+  instrument fell. Two bounded rules address the degenerate cases without introducing
+  discretion:</p>
+
+  <div class="note">
+    <div class="h">Proposed — score floor</div>
+    If <code>max S_i(t) &lt; S_min</code>, the round executes no purchase and the budget rolls
+    into round <code>t+1</code>. The protocol declines to buy the best of a uniformly bad set.
+    <code>S_min</code> is a constant compiled into the worker, not a tunable parameter.
+  </div>
+
+  <div class="note">
+    <div class="h">Proposed — repeat cap</div>
+    If instrument <code>i</code> has won the previous <code>k</code> consecutive rounds, it is
+    excluded from <code>E(t)</code> for one round and the budget goes to the runner-up. This
+    makes diversification structural rather than incidental: without it, the breadth of the
+    resulting portfolio depends purely on market conditions.
+  </div>
+
+  <p>Both rules are stateless in the sense that matters: they depend only on the published
+  history of prior rounds, which anyone can read, so a round's outcome remains reproducible
+  from public data alone.</p>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 5 ======================= -->
+<section id="s5">
+  <h2><span class="num">05</span>Push Settlement</h2>
+  <p>Selection determines <em>what</em> is bought. Settlement determines <em>who receives it</em>,
+  and is where most reward mechanisms leak value.</p>
+
+  <h3 id="s5-1">5.1 Time-weighted balance</h3>
+  <p>A point-in-time snapshot at the hour boundary is trivially gameable: an address can acquire
+  a large balance seconds before the boundary, receive a full hour's allocation, and exit
+  immediately after. The cost of the attack is one round-trip of slippage; the payoff is the
+  entire pro-rata share of an hour of fees.</p>
+
+  <p>Allocation is therefore computed on the holder's <strong>time-weighted balance</strong> over
+  the round, reconstructed from transfer events:</p>
+
+  <div class="math">
+    B̄<span class="g">_j</span>(t)  <span class="c">=</span>  (1 / T) <span class="c">·</span> Σ<span class="g">_k</span>  B<span class="g">_j</span>(k) <span class="c">·</span> Δ<span class="g">_k</span>
+  </div>
+  <p class="where">Where <b>B_j(k)</b> is holder <b>j</b>'s balance during interval <b>k</b>,
+  <b>Δ_k</b> is that interval's duration, and <b>T</b> is the round length. An address held for
+  six minutes of a sixty-minute round earns one tenth the weight of an address held throughout.</p>
+
+  <p>This makes the sniping attack unprofitable by construction rather than by detection: there
+  is no threshold to tune and no heuristic to evade, because the reward is simply proportional
+  to time held.</p>
+
+  <h3 id="s5-2">5.2 Allocation</h3>
+  <p>Let <code>Q</code> be the quantity of the winning instrument actually acquired, and
+  <code>H(t)</code> the set of holders with non-zero time-weighted balance:</p>
+
+  <div class="math">
+    a<span class="g">_j</span>  <span class="c">=</span>  ⌊ Q <span class="c">·</span> B̄<span class="g">_j</span> / Σ<span class="g">_{h ∈ H}</span> B̄<span class="g">_h</span> ⌋
+  </div>
+
+  <p>Allocations are floored to the instrument's smallest representable unit. The rounding
+  remainder <code>Q − Σ a_j</code> is not retained, redirected, or swept to any address — it is
+  carried into the next round's distributable quantity. Over time the remainder nets to
+  approximately zero rather than accumulating anywhere.</p>
+
+  <p>Balances held by the pool, the lock contract, and the distributor itself are excluded from
+  <code>H(t)</code>. Including them would route a share of every distribution back to
+  protocol-controlled addresses, which is the same value leak the design is meant to avoid.</p>
+
+  <h3 id="s5-3">5.3 Merkle commitment</h3>
+  <p>Each round produces a Merkle tree over <code>(address, amount)</code> leaves. The root is
+  committed to <code>SwitchRewards</code> together with the round's complete score table.
+  Committing the score table matters as much as the root: it is what lets a third party verify
+  the winner was the winner, not merely that the payout matched the root.</p>
+
+  <p>The tree is used for verification and dispute, not for claiming. Settlement is a push.</p>
+
+  <h3 id="s5-4">5.4 Execution and slippage</h3>
+  <p>Acquisition executes against the best available venue for the winning instrument, subject
+  to a hard bound:</p>
+  <div class="math">
+    P<span class="g">_exec</span>  <span class="c">≤</span>  P<span class="g">_oracle</span> <span class="c">·</span> (1 <span class="c">+</span> ε)
+  </div>
+  <p class="where">Where <b>P_oracle</b> is the Chainlink reference at execution and <b>ε</b> is
+  the maximum tolerated slippage. If the bound cannot be met, the round does not execute and
+  the budget rolls forward. The protocol will decline a round rather than accept an arbitrary
+  fill — a rolled budget is recoverable, an overpaid fill is not.</p>
+
+  <h3 id="s5-5">5.5 Risk model</h3>
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:180px">Risk</th><th>Exposure and mitigation</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Worker liveness</strong></td><td>If the scoring worker halts, rounds do not
+        execute. Budgets accrue in the hook and remain distributable when service resumes.
+        Capital is not at risk; distribution is delayed. Redundancy is addressed in §8.</td></tr>
+      <tr><td><strong>Oracle failure</strong></td><td>A stale or deviating feed removes the
+        instrument from <code>E(t)</code> rather than producing a mispriced purchase. A
+        market-wide feed outage empties the eligible set, which triggers a rolled round.</td></tr>
+      <tr><td><strong>Issuer risk</strong></td><td>Distributed assets are tokenized equities
+        issued by third parties. Switch does not custody, back, or guarantee them, and inherits
+        their redemption and solvency assumptions in full.</td></tr>
+      <tr><td><strong>Trend-following drawdown</strong></td><td>A momentum-weighted rule buys
+        strength and will therefore buy local tops. The score floor bounds the worst case per
+        round; it does not eliminate it. The engine optimises for a reproducible rule, not for
+        risk-adjusted return.</td></tr>
+      <tr><td><strong>Volume dependence</strong></td><td>Distribution size is a function of
+        trading volume. Low-volume periods produce small distributions. There is no reserve,
+        no smoothing, and no minimum payout.</td></tr>
+      <tr><td><strong>Immutability</strong></td><td>The absence of admin keys is symmetric: a
+        discovered flaw cannot be patched. There is no upgrade path, no pause, and no recovery
+        function. This is a deliberate trade, not an oversight.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 6 ======================= -->
+<section id="s6">
+  <h2><span class="num">06</span>Revenue Model</h2>
+  <p>Switch has exactly one revenue source: the 3% fee captured on swaps through its own pool.
+  There is no presale allocation to a treasury, no ongoing emission, and no secondary business
+  line. Protocol revenue in hour <code>t</code> is:</p>
+
+  <div class="math">
+    R(t) <span class="c">=</span> 0.03 <span class="c">·</span> Vol(t)          B(t) <span class="c">=</span> 0.60 <span class="c">·</span> R(t) <span class="c">=</span> <span class="w">0.018 · Vol(t)</span>
+  </div>
+  <p class="where">Where <b>Vol(t)</b> is quote-denominated swap volume. Effectively 1.8% of all
+  volume is converted into equities and distributed, 0.9% is converted into locked liquidity,
+  and 0.3% funds operations including distribution gas.</p>
+
+  <p>The consequence worth stating plainly: <strong>distribution scales with volume, not with a
+  promised rate.</strong> There is no target APR because there is no mechanism capable of
+  targeting one. The table below is the formula above evaluated at four arbitrary inputs — it is
+  multiplication, not a projection, and no row is more likely than any other.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr>
+      <th>If daily volume were</th><th class="num-col">Hourly buy budget</th>
+      <th class="num-col">Buy budget over 24h</th><th class="num-col">To POL over 24h</th>
+      <th class="num-col">To operations over 24h</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="mono">$250,000</td><td class="num-col">$188</td><td class="num-col">$4,500</td><td class="num-col">$2,250</td><td class="num-col">$750</td></tr>
+      <tr><td class="mono">$1,000,000</td><td class="num-col">$750</td><td class="num-col">$18,000</td><td class="num-col">$9,000</td><td class="num-col">$3,000</td></tr>
+      <tr><td class="mono">$5,000,000</td><td class="num-col">$3,750</td><td class="num-col">$90,000</td><td class="num-col">$45,000</td><td class="num-col">$15,000</td></tr>
+      <tr><td class="mono">$10,000,000</td><td class="num-col">$7,500</td><td class="num-col">$180,000</td><td class="num-col">$90,000</td><td class="num-col">$30,000</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note grey">
+    <div class="h">Read this correctly</div>
+    These rows are deliberately not annualised, because annualising an arbitrary input produces a
+    figure that reads as an expectation. They contain no estimate of what volume will be, no
+    assumption that any level of volume persists, and no statement about what any individual
+    address receives — that depends additionally on its share of supply and on how long the
+    balance was held. They exist to make the mechanism legible, not to imply an outcome.
+  </div>
+
+  <p>Note the second-order effect in the POL column. The 0.9% liquidity allocation compounds:
+  deeper protocol-owned liquidity reduces price impact per trade, which supports larger trades,
+  which increases the fee base that funds both distribution and further liquidity. The protocol
+  is not dependent on third-party liquidity providers who can withdraw.</p>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 7 ======================= -->
+<section id="s7">
+  <h2><span class="num">07</span>Fee Architecture</h2>
+
+  <p>Fee capture occurs inside a Uniswap v4 hook at swap execution, denominated in WETH. There
+  is no separate collection transaction, no accrual the protocol must remember to sweep, and no
+  window during which captured fees sit in an address that anyone controls.</p>
+
+  <div class="split-bar">
+    <div style="flex:60;background:#D9662B">60% · DISTRIBUTION</div>
+    <div style="flex:30;background:#0B0D10">30% · LIQUIDITY</div>
+    <div style="flex:10;background:#2E9C93">10% · OPS</div>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th style="width:96px">Share</th><th style="width:110px">Of swap</th><th>Destination and constraint</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">60%</td><td class="mono">1.80%</td>
+        <td><strong>Hourly acquisition budget.</strong> Funds the round's purchase of the winning
+        instrument. Cannot be redirected; unspent budget rolls forward and is never swept.</td></tr>
+      <tr><td class="mono">30%</td><td class="mono">0.90%</td>
+        <td><strong>Protocol-owned liquidity.</strong> Paired and deposited to
+        <code>SwitchLock</code> under a rolling 60-day lock with no early-withdrawal path.</td></tr>
+      <tr><td class="mono">10%</td><td class="mono">0.30%</td>
+        <td><strong>Operations.</strong> Infrastructure, the scoring worker, and the gas for every
+        push distribution. This is what makes settlement free at the point of receipt.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>7.1 Immutability of destinations</h3>
+  <p>The three destination addresses are compiled into the hook's bytecode as constants. They
+  are not stored in mutable state, not settable by a constructor argument after deployment, and
+  not reachable by any function. Redirecting fees would require deploying a different contract
+  and convincing the market to trade against it — which is visible, permissionless to detect,
+  and requires no trust in the original deployment.</p>
+
+  <h3>7.2 Token constraints</h3>
+  <div class="kv">
+    <div class="k">Supply</div><div class="v">1,000,000,000, fixed. No mint function exists.</div>
+    <div class="k">Maximum wallet</div><div class="v">1.5% of supply, enforced on transfer. Limits
+      the share of any single distribution routable to one address.</div>
+    <div class="k">Transfer tax</div><div class="v">None. Wallet-to-wallet transfers are untaxed;
+      the 3% applies only to pool swaps.</div>
+    <div class="k">Privileged roles</div><div class="v">None. No owner, no pauser, no blacklist,
+      no proxy, no implementation pointer.</div>
+  </div>
+
+  <p>The wallet cap interacts with §5.2 in a way worth making explicit: because no address can
+  exceed 1.5% of supply, no address can receive more than approximately 1.5% of any hourly
+  distribution. The cap is a distribution-fairness mechanism as much as a concentration limit.</p>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 8 ======================= -->
+<section id="s8">
+  <h2><span class="num">08</span>Roadmap</h2>
+
+  <p>Milestones for the Switchboard, push settlement, and the public round log.</p>
+
+  <div class="diagram">
+    <div class="flow">
+      <div class="fstep"><div class="idx">01</div><div class="bd">
+        <div class="t">Phase 1 — Foundation</div>
+        <div class="s">Launch the Switch site and grow the community. Independent audit of all
+          four contracts with the report published in full, including unremediated findings.
+          Deployment, liquidity seeding, and the first lock. Ticker and destination addresses
+          published before launch.</div></div></div>
+      <div class="fstep"><div class="idx">02</div><div class="bd">
+        <div class="t">Phase 2 — Rounds and the public log</div>
+        <div class="s">The first hourly rounds run on Robinhood Chain. Every round is published
+          with its complete score table: all eligible instruments, all four normalised components,
+          the composite, the winner, the quantity acquired, and the Merkle root. Permanent and
+          machine-readable.</div></div></div>
+      <div class="fstep"><div class="idx">03</div><div class="bd">
+        <div class="t">Phase 3 — Open verification</div>
+        <div class="s">An open-source recomputation client that rebuilds any historical round
+          from public inputs and diffs it against what the protocol did. Verification stops
+          being a claim in a document and becomes a command anyone can run.</div></div></div>
+      <div class="fstep"><div class="idx">04</div><div class="bd">
+        <div class="t">Phase 4 — Distributed workers</div>
+        <div class="s">Addressing the liveness dependency in §3.3: multiple independent workers
+          computing the same deterministic output, with settlement requiring agreement. Because
+          the function is deterministic, agreement is a comparison, not a consensus problem.</div></div></div>
+    </div>
+  </div>
+
+  <p>Note what this roadmap does not contain: contract upgrades. Any change to weights, cadence,
+  or the fee split requires a new deployment, published as a separate specification, that holders
+  may adopt or ignore — the original contracts keep running untouched.</p>
+</section>
+
+<div class="rule"><span class="l"></span><span class="d"></span><span class="l"></span></div>
+
+<!-- ======================= 9 ======================= -->
+<section id="s9">
+  <h2><span class="num">09</span>Conclusion</h2>
+
+  <p>Two design decisions carry this protocol, and both are subtractive.</p>
+
+  <p>The first is that <strong>rewards are denominated in assets the protocol does not issue.</strong>
+  This forecloses the reflexive loop described in §2.1. Switch cannot inflate its way to a
+  headline yield, because it cannot print what it distributes. Distribution volume falls when
+  trading falls — but the mechanism does not depend on new capital to make prior distributions
+  good, because they were never denominated in a claim on the protocol.</p>
+
+  <p>The second is that <strong>selection is arithmetic and settlement is a push.</strong> There is
+  no manager to trust, no mandate to renegotiate, no key to compromise, and no claim transaction
+  to remember. What the protocol will do in any given hour is a published function of public
+  inputs; what it did in every past hour can be recomputed and checked by anyone.</p>
+
+  <p>Neither decision is free. Immutability means a discovered flaw cannot be patched. A
+  deterministic momentum rule will buy local tops, and will do so visibly, on the record, in
+  full public view. Volume-linked distribution means quiet weeks pay little. These costs are
+  accepted deliberately, and they are stated here rather than discovered later — because the
+  entire proposition is that the protocol does what it says, and a document that oversold it
+  would be the first counterexample.</p>
+
+  <p>Most protocols pay you in their own token, and ask you to claim it. Switch pays in assets
+  it did not create, and delivers them while you do nothing.</p>
+</section>
+
+</div>
+</main>
+
+<footer>
+  <div class="col">
+    <p>Switch Whitepaper · Version 1.0</p>
+  </div>
+</footer>
+
+<a href="#" class="toplink">Top</a>
+
+<script>
+  // scroll-spy over the top-level sections
+  var links = {}, secs = [];
+  document.querySelectorAll('.toc a.sec').forEach(function(a){
+    var id = a.getAttribute('href').slice(1);
+    links[id] = a;
+    var el = document.getElementById(id);
+    if (el) secs.push(el);
+  });
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (!e.isIntersecting) return;
+      Object.keys(links).forEach(function(k){ links[k].classList.remove('on'); });
+      if (links[e.target.id]) links[e.target.id].classList.add('on');
+    });
+  }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+  secs.forEach(function(s){ obs.observe(s); });
+</script>
+</body>
+</html>

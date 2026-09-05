@@ -1,0 +1,1733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Switch converts 1.8% of every swap into the strongest tokenized equity on the board and pushes it straight into holder balances. One round an hour, decided by a published formula.">
+<meta name="theme-color" content="#0A0908">
+<meta property="og:title" content="Switch — Fees in. Equities out. Every hour.">
+<meta property="og:description" content="An autonomous distribution protocol on Robinhood Chain. Nothing to claim, no key that can redirect it.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="logo/png/favicon-180.png">
+<title>Switch Protocol</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Switch — design tokens */
+:root{
+  --void:#0A0908; --panel:#12100E; --plate:#191614; --raised:#221E1A; --hi:#2C2722;
+  --etch:rgba(242,237,230,.085); --etch2:rgba(242,237,230,.17);
+  --cream:#F2EDE6; --body:#D6CEC4; --muted:#9C948A; --label:#8B8279;
+  --copper:#D9662B; --lit:#FF8B47; --copper-dim:rgba(217,102,43,.14);
+  --patina:#3FB9AC; --patina-dim:rgba(63,185,172,.13);
+
+  --serif:'Instrument Serif','Iowan Old Style',Palatino,Georgia,serif;
+  --sans:'IBM Plex Sans',-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+
+  --rail:64px;                       --gut:clamp(20px,5vw,64px);
+  --maxw:1240px;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --ease-io:cubic-bezier(.65,0,.35,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--void); color:var(--body);
+  font-family:var(--sans); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden; position:relative;
+}
+img,svg{max-width:100%}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--copper);color:#0A0908}
+:focus-visible{outline:2px solid var(--lit);outline-offset:3px;border-radius:3px}
+
+/* ---------- ambient layers ---------- */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg-grid{
+  background-image:linear-gradient(var(--etch) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--etch) 1px,transparent 1px);
+  background-size:64px 64px; opacity:.5;
+  -webkit-mask-image:radial-gradient(ellipse 100% 70% at 50% 0%,#000 0%,transparent 78%);
+          mask-image:radial-gradient(ellipse 100% 70% at 50% 0%,#000 0%,transparent 78%);
+}
+.bg-glow{
+  background:
+    radial-gradient(620px 420px at 12% -4%,rgba(217,102,43,.20),transparent 62%),
+    radial-gradient(540px 380px at 92% 6%,rgba(63,185,172,.085),transparent 64%);
+}
+.bg-grain{
+  opacity:.5; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+}
+.wrap{position:relative;z-index:1}
+
+/* ---------- shared primitives ---------- */
+.shell{max-width:var(--maxw);margin:0 auto;padding:0 var(--gut)}
+.lbl{
+  font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--label);
+}
+.lbl-c{color:var(--copper)}
+.tag{
+  display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);
+  font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--label);
+  border:1px solid var(--etch);border-radius:999px;padding:6px 13px;background:rgba(242,237,230,.02);
+}
+.lamp{width:6px;height:6px;border-radius:50%;background:var(--copper);flex:0 0 auto;
+      box-shadow:0 0 0 3px var(--copper-dim),0 0 12px rgba(255,139,71,.55)}
+.lamp.on{animation:pulse 2.4s var(--ease-io) infinite}
+.lamp.teal{background:var(--patina);box-shadow:0 0 0 3px var(--patina-dim),0 0 12px rgba(63,185,172,.5)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+h1,h2,h3,h4{color:var(--cream);text-wrap:balance;font-weight:400}
+.disp{font-family:var(--serif);letter-spacing:-.018em;line-height:1.03}
+h2.disp{font-size:clamp(32px,4.6vw,58px);margin-bottom:16px}
+h3{font-family:var(--sans);font-size:17px;font-weight:600;letter-spacing:-.005em;line-height:1.4}
+.it{font-style:italic;color:var(--copper)}
+p{max-width:64ch}
+.lede{font-size:clamp(16.5px,1.6vw,19px);color:var(--muted);line-height:1.66}
+
+/* engraved plate */
+.plate{
+  background:linear-gradient(180deg,var(--plate),var(--panel));
+  border:1px solid var(--etch); border-radius:4px; position:relative;
+  box-shadow:inset 0 1px 0 rgba(242,237,230,.045), 0 22px 44px -30px #000;
+}
+.plate::after{content:"";position:absolute;inset:0;border-radius:4px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(242,237,230,.03),transparent 40%)}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  padding:0 20px;min-height:46px;border-radius:3px;border:1px solid var(--etch2);white-space:nowrap;
+  color:var(--cream);background:var(--raised);position:relative;overflow:hidden;
+  transition:transform .18s var(--ease),background .18s var(--ease),border-color .18s var(--ease);
+  cursor:pointer;
+}
+.btn:hover{background:var(--hi);border-color:rgba(242,237,230,.3);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-p{background:var(--copper);border-color:var(--copper);color:#120C07;
+       box-shadow:0 0 0 1px rgba(217,102,43,.3),0 12px 30px -14px rgba(217,102,43,.9)}
+.btn-p:hover{background:var(--lit);border-color:var(--lit)}
+.btn-g{background:transparent}
+.btn-g:hover{background:rgba(242,237,230,.045)}
+.btn svg{width:14px;height:14px;flex:0 0 auto}
+
+/* ---------- round bar + nav ---------- */
+#roundbar{position:fixed;top:0;left:0;right:0;height:2px;z-index:60;background:rgba(242,237,230,.06)}
+#roundbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--copper),var(--lit));
+  box-shadow:0 0 12px rgba(255,139,71,.7);transition:width 1s linear}
+header.nav{
+  position:fixed;top:2px;left:0;right:0;z-index:55;transition:background .3s var(--ease),border-color .3s var(--ease);
+  border-bottom:1px solid transparent;
+}
+header.nav.stuck{background:rgba(10,9,8,.82);backdrop-filter:blur(16px) saturate(140%);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);border-bottom-color:var(--etch)}
+.navin{max-width:var(--maxw);margin:0 auto;padding:0 var(--gut);height:66px;display:flex;align-items:center;gap:22px}
+.brand{display:flex;align-items:center;gap:11px;flex:0 0 auto}
+.brand .wm{font-family:var(--mono);font-weight:700;font-size:18px;letter-spacing:-.045em;color:var(--cream)}
+.brand svg{width:36px;height:18px;display:block;overflow:visible}
+.brand .knob{transition:transform .5s var(--ease)}
+.brand:hover .knob{transform:translateX(-64px)}
+.navlinks{display:flex;gap:4px;margin-left:14px}
+.navlinks a{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--label);padding:0 11px;border-radius:3px;transition:color .16s,background .16s;
+  display:flex;align-items:center;min-height:44px}
+.navlinks a:hover{color:var(--cream);background:rgba(242,237,230,.05)}
+.navact{margin-left:auto;display:flex;align-items:center;gap:10px}
+.navclock{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);white-space:nowrap;
+  display:flex;align-items:center;gap:8px;padding-right:4px}
+.navclock b{color:var(--cream);font-weight:500;font-variant-numeric:tabular-nums}
+.burger{display:none;width:44px;height:44px;align-items:center;justify-content:center;
+  background:transparent;border:1px solid var(--etch);border-radius:3px;cursor:pointer}
+.burger span{display:block;width:16px;height:1.5px;background:var(--cream);position:relative}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:16px;height:1.5px;
+  background:var(--cream);transition:.2s var(--ease)}
+.burger span::before{top:-5px}.burger span::after{top:5px}
+.mobmenu{display:none}
+
+/* ---------- left bus rail ---------- */
+.rail{position:fixed;left:0;top:0;bottom:0;width:var(--rail);z-index:50;pointer-events:none}
+.rail .trace{position:absolute;left:31px;top:0;bottom:0;width:1px;background:rgba(242,237,230,.13)}
+.rail .prog{position:absolute;left:31px;top:0;width:1px;height:0;
+  background:linear-gradient(180deg,var(--copper),rgba(217,102,43,.15));box-shadow:0 0 10px rgba(217,102,43,.5)}
+.rail .nodes{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;
+  justify-content:center;gap:26px;align-items:center;pointer-events:auto}
+.rail .node{width:7px;height:7px;border-radius:50%;background:var(--raised);border:1px solid var(--etch2);
+  transition:.3s var(--ease);position:relative}
+/* 32px hit area, bounded by the 33px pitch */
+.rail .node::before{content:"";position:absolute;left:50%;top:50%;width:32px;height:32px;
+  transform:translate(-50%,-50%)}
+.rail .node.on{background:var(--copper);border-color:var(--copper);box-shadow:0 0 0 4px var(--copper-dim)}
+.rail .node span{position:absolute;left:18px;top:50%;transform:translateY(-50%) translateX(-6px);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--label);
+  white-space:nowrap;opacity:0;transition:.25s var(--ease);pointer-events:none}
+.rail .node:hover span{opacity:1;transform:translateY(-50%) translateX(0)}
+
+/* ---------- sections ---------- */
+main{padding-left:var(--rail)}
+section{padding:clamp(88px,12vw,168px) 0;position:relative}
+.sechead{display:flex;align-items:baseline;gap:16px;margin-bottom:clamp(28px,4vw,46px)}
+.sechead .bar{flex:1;height:1px;background:var(--etch);position:relative;top:-4px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,72px);align-items:start}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.rv.in{opacity:1;transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+  .rv{opacity:1;transform:none}
+}
+
+/* ================= HERO ================= */
+.hero{padding:clamp(112px,15vh,176px) 0 clamp(56px,7vw,84px);position:relative;overflow:hidden}
+.hero .kicker{display:flex;align-items:center;gap:10px 14px;margin-bottom:26px;flex-wrap:wrap}
+.hero .kicker .tag{white-space:nowrap}
+.hero h1{font-family:var(--serif);font-size:clamp(44px,7.4vw,104px);line-height:.98;
+  letter-spacing:-.028em;color:var(--cream);max-width:15ch}
+.hero h1 .ln{display:block;overflow:hidden}
+.hero h1 .ln>i{display:block;font-style:normal;transform:translateY(102%);
+  animation:rise .95s var(--ease) forwards}
+.hero h1 .ln:nth-child(2)>i{animation-delay:.09s}
+.hero h1 .ln:nth-child(3)>i{animation-delay:.18s}
+@keyframes rise{to{transform:translateY(0)}}
+.hero .sub{margin-top:26px;max-width:56ch;font-size:clamp(16px,1.7vw,19.5px);color:var(--muted);line-height:1.62;
+  opacity:0;animation:fadeup .8s var(--ease) .42s forwards}
+@keyframes fadeup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* oversized ghost mark — depth layer behind the hero */
+.ghost{position:absolute;right:-9%;top:14%;width:min(760px,58vw);opacity:.055;pointer-events:none;
+  animation:ghostin 1.6s var(--ease) .3s both}
+.ghost .k{fill:var(--copper)}
+@keyframes ghostin{from{opacity:0}to{opacity:.055}}
+@media(max-width:1080px){.ghost{display:none}}
+.hero .cta{display:flex;flex-wrap:wrap;gap:11px;margin-top:34px;opacity:0;
+  animation:fadeup .8s var(--ease) .54s forwards}
+.hero .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:26px;opacity:0;
+  animation:fadeup .8s var(--ease) .66s forwards}
+.chip{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.09em;color:var(--muted);border:1px solid var(--etch);border-radius:3px;
+  padding:8px 14px;background:rgba(242,237,230,.02);min-height:44px}
+.chip b{color:var(--body);font-weight:500}
+button.chip{cursor:pointer;transition:.16s var(--ease);font-family:var(--mono)}
+button.chip:hover{border-color:var(--etch2);background:rgba(242,237,230,.05);color:var(--cream)}
+
+/* stat strip */
+.strip{border-block:1px solid var(--etch);background:linear-gradient(180deg,rgba(242,237,230,.022),transparent)}
+.strip .in{display:grid;grid-template-columns:repeat(4,1fr)}
+.strip .st{padding:26px 0 28px;border-left:1px solid var(--etch)}
+.strip .st:first-child{border-left:none}
+.strip .st>div:first-child{font-family:var(--serif);font-size:clamp(28px,3.4vw,42px);color:var(--cream);
+  line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.strip .st .u{color:var(--copper);font-size:.55em;margin-left:2px}
+.strip .st p{margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--label);max-width:24ch}
+.strip .st:not(:first-child){padding-left:clamp(14px,2.4vw,28px)}
+
+/* ticker */
+.tick{border-bottom:1px solid var(--etch);overflow:hidden;padding:13px 0;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.tick .row{display:flex;gap:0;width:max-content;animation:march 46s linear infinite}
+.tick:hover .row{animation-play-state:paused}
+@keyframes march{to{transform:translateX(-50%)}}
+.tick .t{display:flex;align-items:center;gap:9px;padding:0 22px;font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.08em;color:var(--muted);white-space:nowrap;border-right:1px solid var(--etch)}
+.tick .t b{color:var(--body);font-weight:500}
+.tick .t .up{color:var(--patina)} .tick .t .dn{color:#C4603F}
+
+/* ================= DASHBOARD CONSOLE ================= */
+.console{border-radius:5px;overflow:hidden;position:relative;
+  background:linear-gradient(180deg,#16130F,#0D0B09);
+  border:1px solid var(--etch2);
+  box-shadow:0 60px 120px -50px #000, 0 0 0 1px rgba(217,102,43,.07), inset 0 1px 0 rgba(242,237,230,.06)}
+.console::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,rgba(255,139,71,.05),transparent 22%)}
+.cbar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--etch);
+  background:rgba(242,237,230,.028);flex-wrap:wrap}
+.cbar .id{font-family:var(--mono);font-size:11px;letter-spacing:.13em;color:var(--cream);font-weight:500}
+.cbar .sep{width:1px;height:15px;background:var(--etch2)}
+.cbar .m{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--label)}
+.cbar .m b{color:var(--body);font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.cbar .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.cgrid{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(0,1fr)}
+.cpane{padding:16px 18px 18px;display:flex;flex-direction:column;min-width:0}
+.cpane+.cpane{border-left:1px solid var(--etch)}
+.recent{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px;padding-top:11px;border-top:1px solid var(--etch);
+  align-items:center}
+.recent>b{font-family:var(--mono);font-size:9.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--label);margin-right:3px}
+.recent>span{font-family:var(--mono);font-size:10.5px;color:var(--muted);border:1px solid var(--etch);
+  border-radius:2px;padding:4px 8px}
+.recent>span.new{color:var(--lit);border-color:rgba(217,102,43,.42);background:var(--copper-dim)}
+.ptitle{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+
+/* score table */
+.srow{display:grid;grid-template-columns:16px 62px 1fr 56px;gap:11px;align-items:center;
+  padding:7px 8px;border-radius:3px;transition:background .25s var(--ease);position:relative}
+.srow+.srow{margin-top:1px}
+.srow .rk{font-family:var(--mono);font-size:10px;color:var(--label);text-align:right}
+.srow .tk{font-family:var(--mono);font-size:12px;color:var(--body);font-weight:500;letter-spacing:.02em}
+.srow .sc{font-family:var(--mono);font-size:11.5px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.stack{display:flex;height:9px;border-radius:2px;overflow:hidden;background:rgba(242,237,230,.05)}
+.stack i{display:block;height:100%;transition:width .9s var(--ease)}
+.stack .m{background:#D9662B} .stack .p{background:rgba(217,102,43,.48)}
+.stack .v{background:rgba(242,237,230,.28)} .stack .s{background:#7A3A26}
+.srow.win{background:linear-gradient(90deg,rgba(217,102,43,.15),rgba(217,102,43,.02));
+  box-shadow:inset 0 0 0 1px rgba(217,102,43,.28)}
+.srow.win .tk{color:var(--lit)} .srow.win .sc{color:var(--cream)}
+.srow.win .rk::after{content:"◂";color:var(--copper);margin-left:0}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:auto;padding-top:14px;border-top:1px solid var(--etch)}
+.legend span{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--label)}
+.legend i{width:9px;height:9px;border-radius:2px;display:block}
+
+/* winner + settlement cards */
+.card{background:rgba(242,237,230,.028);border:1px solid var(--etch);border-radius:4px;padding:14px}
+.card+.card{margin-top:11px}
+.wtick{font-family:var(--serif);font-size:34px;line-height:1;color:var(--cream);letter-spacing:-.02em}
+.wname{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--label);margin-top:5px}
+.kvs{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin-top:13px;padding-top:12px;border-top:1px solid var(--etch)}
+.kvs dt{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--label)}
+.kvs dd{font-family:var(--mono);font-size:11.5px;color:var(--body);text-align:right;font-variant-numeric:tabular-nums;
+  overflow:hidden;text-overflow:ellipsis}
+.kvs dd.ok{color:var(--patina)}
+.pbar{height:5px;border-radius:99px;background:rgba(242,237,230,.07);overflow:hidden;margin-top:11px}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--patina),#6BD6C9);transition:width .8s var(--ease)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:52px;margin-top:12px}
+.spark i{flex:1;background:rgba(217,102,43,.32);border-radius:1px;transition:height .6s var(--ease),background .3s}
+.spark i.hot{background:var(--copper);box-shadow:0 0 10px rgba(217,102,43,.55)}
+.feed{margin-top:11px;display:flex;flex-direction:column;gap:6px;font-family:var(--mono);font-size:10.5px;color:var(--label)}
+.feed div{display:flex;gap:9px;align-items:center;opacity:0;animation:fadein .5s var(--ease) forwards}
+@keyframes fadein{to{opacity:1}}
+.feed b{color:var(--body);font-weight:400}
+.feed .a{color:var(--patina)}
+
+/* ================= content blocks ================= */
+.cards3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--etch);
+  border:1px solid var(--etch);border-radius:4px;overflow:hidden}
+.cards3>div{background:var(--panel);padding:clamp(22px,2.6vw,32px);transition:background .3s var(--ease)}
+.cards3>div:hover{background:var(--plate)}
+.cards3 h3{margin:14px 0 9px}
+.cards3 p{font-size:14.8px;color:var(--muted);line-height:1.62}
+.xnum{font-family:var(--serif);font-size:40px;color:var(--copper);line-height:1;opacity:.85}
+
+/* cycle */
+.cycle{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.step{padding:20px 18px 22px;position:relative;overflow:hidden}
+.step .n{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;color:var(--copper);font-weight:700}
+.step h3{margin:12px 0 8px;font-size:16px}
+.step p{font-size:14.2px;color:var(--muted);line-height:1.58}
+.step code{font-family:var(--mono);font-size:11px;color:var(--copper);background:var(--copper-dim);
+  padding:3px 7px;border-radius:2px;display:inline-block;margin-top:11px;letter-spacing:.02em}
+.step::before{content:"";position:absolute;left:0;top:0;width:100%;height:1px;
+  background:linear-gradient(90deg,var(--copper),transparent);opacity:0;transition:opacity .35s var(--ease)}
+.step:hover::before{opacity:1}
+
+/* formula */
+.math{background:#0D0B09;border:1px solid var(--etch);border-left:2px solid var(--copper);border-radius:4px;
+  padding:20px 22px;font-family:var(--mono);font-size:clamp(11.5px,1.35vw,14px);line-height:2.05;
+  overflow-x:auto;color:var(--body);white-space:nowrap}
+.math .g{color:var(--label)} .math .c{color:var(--copper)} .math .w{color:var(--cream)}
+.weights{display:flex;flex-direction:column;gap:11px;margin-top:22px}
+.wrow{display:grid;grid-template-columns:104px 1fr 52px;gap:13px;align-items:center}
+.wrow .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--body)}
+.wrow .t{height:6px;background:rgba(242,237,230,.06);border-radius:99px;overflow:hidden}
+.wrow .t i{display:block;height:100%;border-radius:99px;width:0;transition:width 1s var(--ease)}
+.wrow .n{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.wrow.neg .n{color:#C4603F}
+
+/* fee split */
+.split{display:flex;height:74px;border-radius:4px;overflow:hidden;border:1px solid var(--etch)}
+.split>div{display:flex;flex-direction:column;justify-content:center;padding:0 18px;width:0;
+  transition:width 1.1s var(--ease);overflow:hidden;white-space:nowrap}
+.split .a{background:linear-gradient(160deg,var(--copper),#B0501F);color:#140D07}
+.split .b{background:var(--raised);color:var(--cream);border-inline:1px solid var(--etch)}
+.split .c{background:linear-gradient(160deg,#2E9C93,#227B74);color:#04211F}
+.split .pc{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.02em}
+.split .nm{font-family:var(--mono);font-size:9.5px;letter-spacing:.17em;text-transform:uppercase;opacity:.78;margin-top:3px}
+
+/* table */
+.tw{overflow-x:auto;border:1px solid var(--etch);border-radius:4px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:var(--label);
+  font-weight:500;text-align:left;padding:13px 16px;border-bottom:1px solid var(--etch2);white-space:nowrap}
+td{padding:13px 16px;border-bottom:1px solid var(--etch);color:var(--body);vertical-align:top;line-height:1.55}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .2s} tbody tr:hover{background:rgba(242,237,230,.022)}
+td.mono,th.r{font-family:var(--mono);font-variant-numeric:tabular-nums}
+th.r,td.r{text-align:right}
+td strong{color:var(--cream);font-weight:600}
+
+/* calculator */
+.calc{padding:clamp(22px,3vw,34px)}
+.calc .out{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--etch);
+  border:1px solid var(--etch);border-radius:4px;overflow:hidden;margin-top:26px}
+.calc .out>div{background:var(--panel);padding:18px 16px}
+.calc .out .v{font-family:var(--serif);font-size:clamp(24px,3vw,34px);color:var(--cream);line-height:1;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.calc .out .v.cu{color:var(--copper)} .calc .out .v.te{color:var(--patina)}
+.calc .out p{margin-top:8px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:rgba(242,237,230,.12);border-radius:99px}
+input[type=range]::-moz-range-track{height:3px;background:rgba(242,237,230,.12);border-radius:99px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--copper);border:3px solid var(--void);margin-top:-8.5px;
+  box-shadow:0 0 0 1px var(--copper),0 0 16px rgba(217,102,43,.7);transition:transform .15s var(--ease)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--copper);
+  border:3px solid var(--void);box-shadow:0 0 0 1px var(--copper)}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.12)}
+/* larger thumb on touch */
+@media (pointer:coarse){
+  input[type=range]::-webkit-slider-thumb{width:26px;height:26px;margin-top:-11.5px}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px}
+}
+.calcv{font-family:var(--serif);font-size:clamp(30px,4vw,46px);color:var(--cream);letter-spacing:-.02em;
+  line-height:1;font-variant-numeric:tabular-nums}
+
+/* trust rows */
+.trust{border-top:1px solid var(--etch)}
+.trust .r{display:grid;grid-template-columns:190px 1fr;gap:24px;padding:20px 0;border-bottom:1px solid var(--etch);
+  transition:padding-left .3s var(--ease)}
+.trust .r:hover{padding-left:10px}
+.trust .r .k{display:flex;align-items:center;gap:9px}
+.trust .r p{font-size:14.8px;color:var(--muted)}
+
+/* roadmap */
+.road{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--etch);
+  border:1px solid var(--etch);border-radius:4px;overflow:hidden}
+.road>div{background:var(--panel);padding:22px 18px 26px;transition:background .3s var(--ease)}
+.road>div:hover{background:var(--plate)}
+.road .ph{font-family:var(--mono);font-size:10px;letter-spacing:.19em;text-transform:uppercase;color:var(--copper)}
+.road h3{margin:11px 0 9px;font-size:15px}
+.road p{font-size:13.6px;color:var(--muted);line-height:1.55}
+.road .dot{width:9px;height:9px;border-radius:50%;border:1px solid var(--etch2);background:var(--raised);margin-bottom:16px}
+.road>div:first-child .dot{background:var(--copper);border-color:var(--copper);box-shadow:0 0 0 4px var(--copper-dim)}
+
+/* faq */
+.faq{border-top:1px solid var(--etch)}
+.faq details{border-bottom:1px solid var(--etch)}
+.faq summary{list-style:none;cursor:pointer;padding:20px 42px 20px 0;position:relative;color:var(--cream);
+  font-size:16.5px;font-weight:500;transition:color .2s}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:hover{color:var(--lit)}
+.faq summary::after{content:"";position:absolute;right:6px;top:50%;width:11px;height:1.5px;background:var(--copper);
+  transform:translateY(-50%)}
+.faq summary::before{content:"";position:absolute;right:11px;top:50%;width:1.5px;height:11px;background:var(--copper);
+  transform:translateY(-50%);transition:transform .28s var(--ease)}
+.faq details[open] summary::before{transform:translateY(-50%) rotate(90deg);opacity:0}
+.faq .ans{padding:0 0 22px;color:var(--muted);font-size:15px;line-height:1.68;max-width:72ch;
+  animation:fadeup .4s var(--ease)}
+.faq .ans code{font-family:var(--mono);font-size:12.5px;color:var(--copper)}
+
+/* final cta */
+.final{text-align:center;border-top:1px solid var(--etch);position:relative;overflow:hidden}
+.final::before{content:"";position:absolute;left:50%;top:0;width:900px;height:420px;transform:translateX(-50%);
+  background:radial-gradient(closest-side,rgba(217,102,43,.2),transparent);pointer-events:none}
+.final h2{margin-inline:auto;max-width:16ch}
+.final p{margin:18px auto 0}
+.final .cta{display:flex;justify-content:center;flex-wrap:wrap;gap:11px;margin-top:32px}
+
+/* footer */
+footer{border-top:1px solid var(--etch);background:linear-gradient(180deg,transparent,rgba(242,237,230,.018));
+  padding:clamp(44px,6vw,68px) 0 40px}
+.fgrid{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:34px}
+.fcol h4{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--label);
+  margin-bottom:15px;font-weight:500}
+.fcol a{display:flex;align-items:center;min-height:44px;font-size:14px;color:var(--muted);
+  transition:color .16s}
+.fcol a:hover{color:var(--lit)}
+.fdisc{margin-top:44px;padding-top:26px;border-top:1px solid var(--etch);font-size:12.4px;color:#7E766C;line-height:1.72}
+.fdisc p+p{margin-top:12px}
+.socials{display:flex;gap:8px;margin-top:20px}
+.socials a{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--etch);
+  border-radius:3px;color:var(--muted);transition:.16s var(--ease)}
+.socials a:hover{color:var(--cream);border-color:var(--etch2);background:rgba(242,237,230,.05)}
+.socials svg{width:16px;height:16px}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);z-index:80;opacity:0;
+  pointer-events:none;transition:.3s var(--ease);background:var(--raised);border:1px solid var(--etch2);
+  border-radius:3px;padding:11px 18px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--cream)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ================= responsive ================= */
+@media (max-width:1200px){ .navclock{display:none} }
+@media (max-width:1080px){
+  :root{--rail:0px}
+  .rail{display:none}
+  .cards3,.road{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cycle{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .calc .out{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:880px){
+  .navlinks,.navclock,.navact .btn-g{display:none}
+  .burger{display:flex}
+  .cbar{gap:8px 10px}
+  .cbar .sep{display:none}
+  .cbar .right{margin-left:0;width:100%;justify-content:space-between;
+    padding-top:9px;border-top:1px solid var(--etch)}
+  .mobmenu{display:block;position:fixed;inset:68px 0 auto;z-index:54;background:rgba(10,9,8,.97);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--etch);
+    padding:14px var(--gut) 24px;transform:translateY(-120%);transition:transform .35s var(--ease)}
+  .mobmenu.open{transform:none}
+  .mobmenu a{display:block;padding:13px 0;border-bottom:1px solid var(--etch);font-family:var(--mono);
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--body);min-height:46px}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .cgrid{grid-template-columns:minmax(0,1fr)}
+  .cpane+.cpane{border-left:none;border-top:1px solid var(--etch)}
+  .strip .in{grid-template-columns:repeat(2,1fr)}
+  .strip .st{border-left:none;padding-left:0!important}
+  .strip .st:nth-child(2n){border-left:1px solid var(--etch);padding-left:clamp(14px,4vw,28px)!important}
+  .strip .st:nth-child(n+3){border-top:1px solid var(--etch)}
+  .trust .r{grid-template-columns:minmax(0,1fr);gap:9px}
+  .fgrid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:600px){
+  .navact .btn-p{display:none}
+  .navin{gap:12px}
+  .cards3,.road,.cycle,.calc .out{grid-template-columns:minmax(0,1fr)}
+  .srow{grid-template-columns:14px 52px 1fr 46px;gap:8px}
+  .split{height:auto;flex-direction:column}
+  .split>div{width:100%!important;padding:14px 16px;min-height:62px}
+  .split .b{border-inline:none;border-block:1px solid var(--etch)}
+  .fgrid{grid-template-columns:minmax(0,1fr);gap:26px}
+  .hero h1{font-size:clamp(38px,10.5vw,56px)}
+}
+
+/* pending buttons */
+.btn.soon,.chip.soon{
+  color:var(--muted);background:transparent;border-style:dashed;
+  border-color:rgba(242,237,230,.16);cursor:pointer}
+.btn.soon:hover,.chip.soon:hover{
+  background:rgba(242,237,230,.035);border-color:rgba(242,237,230,.3);
+  color:var(--body);transform:none}
+.btn.soon .arw{display:none}
+.tagsoon{
+  display:inline-flex;align-items:center;font-family:var(--mono);font-size:8.5px;
+  font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--copper);background:var(--copper-dim);
+  border:1px solid rgba(217,102,43,.32);border-radius:2px;
+  padding:2px 5px;margin-left:2px;flex:0 0 auto}
+.chip.soon .tagsoon{font-size:8px}
+.soonlink{color:var(--label)!important;gap:8px}
+.soonlink .tagsoon{margin-left:7px}
+.mobmenu a.soonlink{display:flex;align-items:center}
+
+/* pending primary */
+@property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+.btn.btn-p.soon{
+  border:1.5px solid transparent;
+  background:
+    linear-gradient(#2A1A10,#2A1A10) padding-box,
+    conic-gradient(from var(--ang),
+      rgba(217,102,43,.30) 0 58%, #FF8B47 74%, #FFE0C4 80%, #FF8B47 86%,
+      rgba(217,102,43,.30) 100%) border-box;
+  color:var(--lit);
+  box-shadow:0 0 0 1px rgba(217,102,43,.14), 0 14px 34px -18px rgba(217,102,43,.55);
+  animation:runborder 3.2s linear infinite;
+}
+.btn.btn-p.soon:hover{
+  background:
+    linear-gradient(#3A2415,#3A2415) padding-box,
+    conic-gradient(from var(--ang),
+      rgba(217,102,43,.34) 0 58%, #FFA45F 74%, #FFF0E0 80%, #FFA45F 86%,
+      rgba(217,102,43,.34) 100%) border-box;
+  color:#FFC79E;
+}
+.btn.btn-p.soon .tagsoon{
+  color:#FFD2B0;background:rgba(255,139,71,.18);border-color:rgba(255,139,71,.42)}
+@keyframes runborder{to{--ang:360deg}}
+
+/* @property fallback */
+@supports not (background: conic-gradient(from var(--ang), red, blue)){
+  .btn.btn-p.soon{background:rgba(217,102,43,.16);border:1.5px solid rgba(255,139,71,.55);
+                  animation:none}
+}
+@media (prefers-reduced-motion:reduce){ .btn.btn-p.soon{animation:none} }
+
+/* social buttons */
+.hero .social{display:flex;flex-wrap:wrap;gap:11px;margin-top:14px;opacity:0;
+  animation:fadeup .8s var(--ease) .60s forwards}
+.btn-s{background:transparent;border-color:var(--etch2)}
+.btn-s:hover{background:rgba(242,237,230,.055);border-color:rgba(242,237,230,.34)}
+.btn-s svg{width:15px;height:15px}
+.navsoc{display:flex;gap:6px;align-items:center}
+.navsoc a{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--etch);border-radius:3px;color:var(--muted);
+  transition:.16s var(--ease)}
+.navsoc a:hover{color:var(--cream);border-color:var(--etch2);background:rgba(242,237,230,.05)}
+.navsoc svg{width:15px;height:15px}
+@media(max-width:880px){.navsoc{display:none}}
+
+/* motion */
+
+/* word reveal */
+.wd{display:inline-block}
+.wd>i{display:inline-block;font-style:inherit;color:inherit;opacity:0;
+  transform:translateY(.42em);
+  transition:opacity .55s var(--ease),transform .55s var(--ease)}
+.in .wd>i{opacity:1;transform:none}
+
+/* section rules */
+.sechead .bar{transform:scaleX(0);transform-origin:left center;
+  transition:transform .9s var(--ease) .1s}
+.sechead.in .bar{transform:scaleX(1)}
+
+.ghost{will-change:transform}
+
+/* card hover */
+.cards3>div,.step,.road>div{
+  transition:transform .22s var(--ease),background .3s var(--ease),
+             border-color .22s var(--ease),box-shadow .22s var(--ease)}
+.cards3>div:hover,.road>div:hover,.step:hover{transform:translateY(-3px)}
+.step:hover{box-shadow:inset 0 1px 0 rgba(242,237,230,.07),0 26px 50px -30px #000}
+.trust .r{transition:padding-left .3s var(--ease),background .3s var(--ease)}
+.trust .r:hover{background:rgba(242,237,230,.016)}
+
+.navin{transition:height .25s var(--ease)}
+header.nav.stuck .navin{height:58px}
+
+/* chip stagger */
+.hero .chips>*{opacity:0;animation:chipin .5s var(--ease) forwards}
+.hero .chips>*:nth-child(1){animation-delay:.68s}
+.hero .chips>*:nth-child(2){animation-delay:.74s}
+.hero .chips>*:nth-child(3){animation-delay:.80s}
+.hero .chips>*:nth-child(4){animation-delay:.86s}
+.hero .chips>*:nth-child(5){animation-delay:.92s}
+@keyframes chipin{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.hero .chips{animation:none;opacity:1}
+
+/* console fx */
+.console::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:radial-gradient(460px circle at var(--mx,50%) var(--my,0%),
+    rgba(255,139,71,.09),transparent 62%);
+  opacity:0;transition:opacity .35s var(--ease)}
+.console:hover::after{opacity:1}
+.sweep{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:0;
+  background:linear-gradient(100deg,transparent 32%,rgba(255,139,71,.075) 50%,transparent 68%)}
+.console.landed .sweep{animation:sweep .9s var(--ease)}
+@keyframes sweep{0%{opacity:1;transform:translateX(-100%)}100%{opacity:0;transform:translateX(100%)}}
+
+/* winner pulse */
+@keyframes winpulse{0%{box-shadow:inset 0 0 0 1px rgba(217,102,43,.28)}
+  40%{box-shadow:inset 0 0 0 1px rgba(255,139,71,.85),0 0 22px -4px rgba(217,102,43,.5)}
+  100%{box-shadow:inset 0 0 0 1px rgba(217,102,43,.28)}}
+.srow.win{animation:winpulse 1.1s var(--ease)}
+
+#roundbar i{will-change:width}
+
+input[type=range]:active::-webkit-slider-thumb{
+  box-shadow:0 0 0 1px var(--copper),0 0 26px rgba(217,102,43,.95)}
+
+.strip .st>div:first-child{font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion:reduce){
+  .wd>i{opacity:1!important;transform:none!important}
+  .sechead .bar{transform:scaleX(1)!important}
+  .ghost{transform:none!important}
+  .hero .chips>*{opacity:1!important;animation:none!important}
+  .cards3>div:hover,.road>div:hover,.step:hover{transform:none}
+  .console.landed .sweep,.srow.win{animation:none}
+}
+</style>
+
+<div class="bg bg-glow"></div>
+<div class="bg bg-grid"></div>
+<div class="bg bg-grain"></div>
+
+<div id="roundbar" aria-hidden="true"><i></i></div>
+
+<header class="nav" id="nav">
+  <div class="navin">
+    <a class="brand" href="#top" aria-label="Switch — home">
+      <svg viewBox="0 0 128 64" aria-hidden="true">
+        <rect x="4" y="4" width="120" height="56" rx="28" fill="none" stroke="#F2EDE6" stroke-width="8"/>
+        <line x1="28" y1="32" x2="52" y2="32" stroke="#F2EDE6" stroke-width="8" stroke-linecap="round" opacity=".34"/>
+        <line x1="64" y1="32" x2="72" y2="32" stroke="#F2EDE6" stroke-width="8" stroke-linecap="round" opacity=".16"/>
+        <circle class="knob" cx="96" cy="32" r="16" fill="#D9662B"/>
+      </svg>
+      <span class="wm">switch<span style="color:#D9662B">.</span></span>
+    </a>
+    <nav class="navlinks" aria-label="Sections">
+      <a href="#mechanism">Mechanism</a>
+      <a href="#switchboard">Switchboard</a>
+      <a href="#settlement">Settlement</a>
+      <a href="#fees">Fees</a>
+      <a href="#roadmap">Roadmap</a>
+    </nav>
+    <div class="navact">
+      <div class="navclock" title="Time remaining until the next UTC hour — the protocol's round boundary">
+        <span class="lamp teal" aria-hidden="true"></span>
+        <span>NEXT HOUR</span><b id="navClock">--:--</b>
+      </div>
+      <span class="navsoc">
+        <a data-link="x" href="#" aria-label="Switch on X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2.5h3.3l-7.2 8.2 8.5 11.3h-6.7l-5.2-6.9-6 6.9H2.3l7.7-8.8L1.9 2.5h6.8l4.7 6.3 5.5-6.3Zm-1.2 17.6h1.8L7.3 4.4H5.4l12.3 15.7Z"/></svg></a>
+        <a data-link="tg" href="#" aria-label="Switch on Telegram"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 18.9 19c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.3.3-.5.5-1 .5l.3-4.7 8.5-7.7c.4-.3-.1-.5-.6-.2L6.9 13l-4.5-1.4c-1-.3-1-1 .2-1.4l17.6-6.8c.8-.3 1.5.2 1.2 1Z"/></svg></a>
+      </span>
+      <a class="btn btn-g" data-link="paper" href="#">Whitepaper</a>
+      <a class="btn btn-p" data-link="dapp" href="#">Switch Dapp
+        <svg class="arw" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+</header>
+<div class="mobmenu" id="mobmenu">
+  <a href="#mechanism">Mechanism</a>
+  <a href="#switchboard">Switchboard</a>
+  <a href="#settlement">Settlement</a>
+  <a href="#fees">Fees</a>
+  <a href="#economics">Economics</a>
+  <a href="#roadmap">Roadmap</a>
+  <a href="#faq">FAQ</a>
+  <a data-link="paper" href="#">Whitepaper &#8599;</a>
+  <a data-link="x" href="#">X / Twitter &#8599;</a>
+  <a data-link="tg" href="#">Telegram &#8599;</a>
+  <a data-link="dapp" href="#" style="color:var(--copper)">Switch Dapp &#8599;</a>
+</div>
+
+<div class="rail" aria-hidden="true">
+  <span class="trace"></span><span class="prog" id="railProg"></span>
+  <div class="nodes" id="railNodes"></div>
+</div>
+
+<div class="wrap" id="top">
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero" style="padding-bottom:0">
+  <svg class="ghost" viewBox="0 0 128 64" aria-hidden="true">
+    <rect x="4" y="4" width="120" height="56" rx="28" fill="none" stroke="#F2EDE6" stroke-width="6"/>
+    <line x1="28" y1="32" x2="52" y2="32" stroke="#F2EDE6" stroke-width="6" stroke-linecap="round" opacity=".34"/>
+    <line x1="64" y1="32" x2="72" y2="32" stroke="#F2EDE6" stroke-width="6" stroke-linecap="round" opacity=".16"/>
+    <circle class="k" cx="96" cy="32" r="16"/>
+  </svg>
+  <div class="shell">
+    <div class="kicker">
+      <span class="tag"><span class="lamp teal"></span>Robinhood Chain</span>
+      <span class="lbl">Autonomous distribution protocol</span>
+    </div>
+
+    <h1>
+      <span class="ln"><i>Fees in.</i></span>
+      <span class="ln"><i>Equities out.</i></span>
+      <span class="ln"><i class="it">Every hour.</i></span>
+    </h1>
+
+    <p class="sub">Switch turns 1.8% of every swap into the strongest tokenized equity on the
+      board and pushes it straight into holder balances. One round an hour, decided by a
+      published formula. Nothing to claim. No key that can redirect it.</p>
+
+    <div class="cta">
+      <a class="btn btn-p" data-link="dapp" href="#">Switch to Dapp
+        <svg class="arw" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a class="btn btn-g" data-link="paper" href="#">Read the whitepaper</a>
+    </div>
+
+    <div class="social">
+      <a class="btn btn-s" data-link="x" href="#">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2.5h3.3l-7.2 8.2 8.5 11.3h-6.7l-5.2-6.9-6 6.9H2.3l7.7-8.8L1.9 2.5h6.8l4.7 6.3 5.5-6.3Zm-1.2 17.6h1.8L7.3 4.4H5.4l12.3 15.7Z"/></svg>
+        Follow on X</a>
+      <a class="btn btn-s" data-link="tg" href="#">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 18.9 19c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.3.3-.5.5-1 .5l.3-4.7 8.5-7.7c.4-.3-.1-.5-.6-.2L6.9 13l-4.5-1.4c-1-.3-1-1 .2-1.4l17.6-6.8c.8-.3 1.5.2 1.2 1Z"/></svg>
+        Join the Telegram</a>
+    </div>
+
+    <div class="chips">
+      <span class="chip"><span class="lamp teal"></span>Robinhood Chain <b>&middot; 4663</b></span>
+      <span class="chip">Ticker <b>$SWTCH</b></span>
+      <span class="chip">Supply <b>1,000,000,000</b></span>
+      <button class="chip" id="copyCa" type="button" title="Copy contract address">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 3.5A1.5 1.5 0 0 0 9 2H4a1.5 1.5 0 0 0-1.5 1.5v5A1.5 1.5 0 0 0 4 10" stroke="currentColor" stroke-width="1.5"/></svg>
+        <b id="caText">0x0000…0000</b></button>
+      <a class="chip" data-link="chart" href="#" style="text-decoration:none">Chart &#8599;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONSOLE ============ -->
+<section id="console" style="padding-top:clamp(44px,6vw,72px);padding-bottom:0">
+  <div class="shell">
+    <div class="rv">
+      <div class="console">
+        <span class="sweep" aria-hidden="true"></span>
+        <div class="cbar">
+          <span class="lamp on" aria-hidden="true"></span>
+          <span class="id">SWITCHBOARD</span>
+          <span class="sep"></span>
+          <span class="m">Round <b id="dRound">#0000</b></span>
+          <span class="sep"></span>
+          <span class="m">Closes in <b id="dClock">--:--</b></span>
+          <span class="right">
+            <span class="m">Accruing <b id="dBudget">$0</b></span>
+            <span class="tag" style="border-color:rgba(217,102,43,.34);color:var(--copper)">Simulated</span>
+          </span>
+        </div>
+
+        <div class="cgrid">
+          <div class="cpane">
+            <div class="ptitle">
+              <span class="lbl">Eligible set &mdash; composite score S(t)</span>
+              <span class="lbl" id="dCount">12 instruments</span>
+            </div>
+            <div id="dRows"></div>
+            <div class="legend">
+              <span><i style="background:#D9662B"></i>Momentum 0.40</span>
+              <span><i style="background:rgba(217,102,43,.48)"></i>Buy pressure 0.35</span>
+              <span><i style="background:rgba(242,237,230,.28)"></i>ln Volume 0.15</span>
+              <span><i style="background:#7A3A26"></i>Volatility &minus;0.10</span>
+            </div>
+            <div class="recent" id="dRecent"></div>
+          </div>
+
+          <div class="cpane">
+            <div class="ptitle"><span class="lbl lbl-c">Round winner</span><span class="lbl">argmax S</span></div>
+            <div class="card">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+                <div><div class="wtick" id="dWinTk">&mdash;</div><div class="wname" id="dWinNm">awaiting round</div></div>
+                <span class="tag" style="border-color:rgba(217,102,43,.34);color:var(--copper)">S <b id="dWinS" style="font-weight:500">0.00</b></span>
+              </div>
+              <dl class="kvs">
+                <dt>Round budget</dt><dd id="dWinB">$0</dd>
+                <dt>Acquired</dt><dd id="dWinQ">0.000</dd>
+                <dt>Exec vs oracle</dt><dd class="ok" id="dWinE">+0.00%</dd>
+              </dl>
+            </div>
+
+            <div class="card">
+              <div class="ptitle" style="margin-bottom:0">
+                <span class="lbl">Push settlement</span>
+                <span class="lbl" style="color:var(--patina)" id="dSetState">SETTLING</span>
+              </div>
+              <div class="pbar"><i id="dPush" style="width:0"></i></div>
+              <dl class="kvs">
+                <dt>Batches</dt><dd id="dHold">&mdash;</dd>
+                <dt>Pushed</dt><dd id="dPushed">0%</dd>
+                <dt>Merkle root</dt><dd id="dRoot">0x&hellip;</dd>
+                <dt>Gas paid by</dt><dd class="ok">Protocol</dd>
+              </dl>
+            </div>
+
+            <div class="card">
+              <div class="ptitle" style="margin-bottom:0">
+                <span class="lbl">Round budget &mdash; 24-round shape</span>
+                <span class="lbl" id="d24">simulated</span>
+              </div>
+              <div class="spark" id="dSpark"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:14px;max-width:78ch;font-size:13.5px;color:var(--label);line-height:1.6">
+        Illustrative interface &mdash; figures are generated for demonstration, not live market data.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STRIP ============ -->
+<section style="padding:0;margin-top:clamp(60px,8vw,96px)">
+  <div class="strip">
+    <div class="shell"><div class="in">
+      <div class="st rv"><div>24</div><p>Rounds a day, every day, on the hour</p></div>
+      <div class="st rv"><div>1.8<span class="u">%</span></div><p>Of swap volume converted into equities</p></div>
+      <div class="st rv"><div>0</div><p>Claim transactions, ever</p></div>
+      <div class="st rv"><div>4</div><p>Immutable contracts, zero admin keys</p></div>
+    </div></div>
+  </div>
+  <div class="tick">
+    <div class="row" id="tickRow"></div>
+  </div>
+  <div class="shell"><p style="margin-top:12px;font-size:12.6px;color:var(--label);line-height:1.6;max-width:80ch">
+    Illustrative candidate universe &mdash; instruments qualify per round against the eligibility
+    rules below.</p></div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">The problem</span><span class="bar"></span></div>
+    <div class="two" style="margin-bottom:clamp(30px,4vw,50px)">
+      <h2 class="disp rv">Three ways reward tokens quietly take it back</h2>
+      <p class="lede rv">Every on-chain reward mechanism leaks value somewhere. Usually in the
+        denomination, the claim, or the person holding the keys. Switch is built by removing all
+        three rather than balancing them.</p>
+    </div>
+
+    <div class="cards3 rv">
+      <div>
+        <span class="lbl lbl-c">Loop</span>
+        <h3>Yield paid in the thing you already hold</h3>
+        <p>A reward denominated in the protocol's own token is funded by the next buyer. Nominal APR
+          can be set arbitrarily high because the unit is minted at will &mdash; and the emission
+          pushes the price down exactly as fast as it pushes the rate up. The two are not
+          independent variables.</p>
+      </div>
+      <div>
+        <span class="lbl lbl-c">Toll</span>
+        <h3>A claim that costs more than it returns</h3>
+        <p>Gas is roughly constant regardless of position size, so the threshold to claim is
+          regressive: trivially cleared by whales, routinely unmet by everyone else. The unclaimed
+          remainder accrues to whoever was large enough to bother. Passive income, with a fee on
+          inattention.</p>
+      </div>
+      <div>
+        <span class="lbl lbl-c">Key</span>
+        <h3>A treasury that decides on your behalf</h3>
+        <p>Any address that can direct purchases can redirect them. A multisig lowers the odds of
+          misuse without removing the capability, mandates get renegotiated precisely when holders
+          can least afford to exit, and a judgement call can never be independently checked.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MECHANISM ============ -->
+<section id="mechanism">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">The hourly cycle</span><span class="bar"></span></div>
+    <div class="two" style="margin-bottom:clamp(30px,4vw,50px)">
+      <h2 class="disp rv">Six steps, on the hour,<br><span class="it">without you</span></h2>
+      <p class="lede rv">The same sequence runs every hour, forever, whether anyone is watching or
+        not. Steps 1 through 4 are enforced by immutable bytecode. Steps 3 and 5 are computed off
+        chain from public inputs and committed on chain, so any third party can recompute them and
+        prove a mismatch.</p>
+    </div>
+
+    <div class="cycle">
+      <div class="plate step rv"><div class="n">01</div>
+        <h3>Fee accrual</h3>
+        <p>Every swap routed through the pool contributes 3% in WETH at execution, inside the
+          Uniswap v4 hook. 60% of it lands in this round's purchase budget.</p>
+        <code>SwitchHook &rarr; budget</code></div>
+      <div class="plate step rv"><div class="n">02</div>
+        <h3>Close of hour</h3>
+        <p>The budget seals at the hour boundary. Fees that arrive one second later belong to the
+          next round, not this one.</p>
+        <code>B(t) fixed at hh:00:00 UTC</code></div>
+      <div class="plate step rv"><div class="n">03</div>
+        <h3>Scoring</h3>
+        <p>Every instrument in the eligible set is scored on the hour that just closed. Highest
+          composite wins. Ties resolve deterministically, never randomly.</p>
+        <code>w(t) = argmax S&#8305;(t)</code></div>
+      <div class="plate step rv"><div class="n">04</div>
+        <h3>Acquisition</h3>
+        <p>The entire budget buys the winner, subject to a hard slippage bound against the oracle.
+          A bounded-out fill rolls the budget forward instead of overpaying.</p>
+        <code>P_exec &le; P_oracle &middot; (1+&epsilon;)</code></div>
+      <div class="plate step rv"><div class="n">05</div>
+        <h3>Allocation &amp; commitment</h3>
+        <p>The acquired quantity is divided pro rata by time&#8209;weighted balance. The Merkle root
+          is committed on chain alongside the round's complete score table.</p>
+        <code>root(t) &rarr; SwitchRewards</code></div>
+      <div class="plate step rv"><div class="n">06</div>
+        <h3>Push settlement</h3>
+        <p>Allocations are pushed to holder addresses in batches, gas paid from the operations
+          share. The holder signs nothing and does nothing.</p>
+        <code>transfer &rarr; holder</code></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SWITCHBOARD ============ -->
+<section id="switchboard">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">Selection</span><span class="bar"></span></div>
+    <div class="two">
+      <div>
+        <h2 class="disp rv">The Switchboard answers one question <span class="it">with arithmetic</span></h2>
+        <p class="lede rv" style="margin-top:16px">Four raw metrics per instrument, each converted
+          to a cross-sectional z&#8209;score across the eligible set and winsorised at &plusmn;3 so a
+          single outlier can't own a round. No cross-round state enters the calculation, which is
+          what makes every round reproducible from one hour of public data.</p>
+
+        <div class="weights rv" style="margin-top:30px">
+          <div class="wrow"><span class="k">Momentum</span>
+            <span class="t"><i data-w="40" style="background:rgba(217,102,43,.9)"></i></span><span class="n">+0.40</span></div>
+          <div class="wrow"><span class="k">Buy pressure</span>
+            <span class="t"><i data-w="35" style="background:rgba(217,102,43,.5)"></i></span><span class="n">+0.35</span></div>
+          <div class="wrow"><span class="k">ln Volume</span>
+            <span class="t"><i data-w="15" style="background:rgba(242,237,230,.28)"></i></span><span class="n">+0.15</span></div>
+          <div class="wrow neg"><span class="k">Volatility</span>
+            <span class="t"><i data-w="10" style="background:rgba(196,96,63,.6)"></i></span><span class="n">&minus;0.10</span></div>
+        </div>
+
+        <p class="rv" style="margin-top:24px;color:var(--muted);font-size:15px">Momentum and buy
+          pressure together carry 0.75 &mdash; this is a trend follower, not a value screen. Volume
+          at 0.15 breaks ties between instruments with similar price action. Volatility enters
+          negatively, so the engine takes the calmer of two equivalent movers rather than chasing
+          the most violent one.</p>
+      </div>
+
+      <div>
+        <div class="rv">
+          <span class="lbl" style="display:block;margin-bottom:12px">Composite score</span>
+          <div class="math"><span class="w">S<span class="g">&#8305;</span>(t) <span class="c">=</span> 0.40&middot;&#7825;(m<span class="g">&#8305;</span>) <span class="c">+</span> 0.35&middot;&#7825;(p<span class="g">&#8305;</span>) <span class="c">+</span> 0.15&middot;&#7825;(ln v<span class="g">&#8305;</span>) <span class="c">&minus;</span> 0.10&middot;&#7825;(&sigma;<span class="g">&#8305;</span>)</span><br>
+<span class="w">w(t) <span class="c">=</span> argmax<span class="g">&nbsp;i &isin; E(t)</span> &nbsp;S<span class="g">&#8305;</span>(t)</span></div>
+        </div>
+
+        <div class="rv" style="margin-top:26px">
+          <span class="lbl" style="display:block;margin-bottom:12px">Eligibility &mdash; all three required</span>
+          <div class="tw"><table>
+            <tbody>
+              <tr><td class="mono" style="width:36%;color:var(--copper)">Live oracle</td>
+                <td>A Chainlink feed updated within its declared heartbeat. A stale feed drops the instrument for that round rather than being extrapolated.</td></tr>
+              <tr><td class="mono" style="color:var(--copper)">Realised volume</td>
+                <td>Quote&#8209;side volume over the hour of at least <strong>V_min</strong>, excluding instruments too thin to absorb the budget.</td></tr>
+              <tr><td class="mono" style="color:var(--copper)">Quotable depth</td>
+                <td>The budget must represent no more than <strong>&delta;_max</strong> of quotable liquidity at the acquisition bound.</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <div class="rv" style="margin-top:26px">
+          <span class="lbl" style="display:block;margin-bottom:12px">Guards against a degenerate round</span>
+          <div class="plate" style="padding:18px 20px">
+            <h3 style="font-size:15px">Score floor</h3>
+            <p style="font-size:14.4px;color:var(--muted);margin-top:6px">If the best score falls
+              below <strong style="color:var(--cream)">S_min</strong>, the round buys nothing and the
+              budget rolls forward. The protocol declines to buy the best of a uniformly bad set.</p>
+            <div style="height:1px;background:var(--etch);margin:16px 0"></div>
+            <h3 style="font-size:15px">Repeat cap</h3>
+            <p style="font-size:14.4px;color:var(--muted);margin-top:6px">An instrument that has won
+              <strong style="color:var(--cream)">k</strong> consecutive rounds sits out one round and
+              the budget goes to the runner&#8209;up &mdash; making breadth structural rather than
+              a lucky consequence of market conditions.</p>
+          </div>
+        </div>
+
+        <p class="rv" style="margin-top:22px;font-size:14.5px;color:var(--muted)">Ties resolve on
+          highest &#7825;(m), then highest &#7825;(p), then ascending token address. No term in S
+          references the protocol's own token, treasury balance, or prior winners &mdash; the engine
+          cannot be steered by anyone's position, including the team's.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.twb{display:flex;flex-direction:column;gap:14px;margin-top:22px}
+.twb .h{display:grid;grid-template-columns:112px 1fr 66px;gap:14px;align-items:center}
+.twb .nm{font-family:var(--mono);font-size:11px;letter-spacing:.09em;color:var(--body)}
+.twb .track{height:34px;border:1px solid var(--etch);border-radius:3px;background:
+  repeating-linear-gradient(90deg,transparent 0,transparent 8.33%,var(--etch) 8.33%,var(--etch) calc(8.33% + 1px));
+  position:relative;overflow:hidden}
+.twb .fill{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,rgba(217,102,43,.55),rgba(217,102,43,.28));
+  border-left:1px solid var(--copper);width:0;transition:width 1.1s var(--ease)}
+.twb .fill.t{background:linear-gradient(180deg,rgba(63,185,172,.45),rgba(63,185,172,.2));border-left-color:var(--patina)}
+.twb .wt{font-family:var(--mono);font-size:12px;color:var(--cream);text-align:right;font-variant-numeric:tabular-nums}
+.twb .axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.14em;color:var(--label);padding-left:126px}
+@media(max-width:600px){.twb .h{grid-template-columns:78px 1fr 54px;gap:9px}.twb .axis{padding-left:87px}}
+</style>
+
+<!-- ============ SETTLEMENT ============ -->
+<section id="settlement">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">Settlement</span><span class="bar"></span></div>
+    <div class="two">
+      <div>
+        <h2 class="disp rv">Paid by the minute, <span class="it">not by the snapshot</span></h2>
+        <p class="lede rv" style="margin-top:16px">A snapshot at the hour boundary is trivially
+          gameable: buy a large balance seconds before the close, collect a full hour's allocation,
+          exit immediately. The attack costs one round trip of slippage and pays an entire hour of
+          fees.</p>
+        <p class="rv" style="margin-top:16px;color:var(--muted);font-size:15px">So allocation runs
+          on time&#8209;weighted balance, reconstructed from transfer events. There is no threshold
+          to tune and no heuristic to evade &mdash; the reward is simply proportional to time held,
+          which makes the attack unprofitable by construction rather than by detection.</p>
+
+        <div class="math rv" style="margin-top:26px">B&#772;<span class="g">&#11388;</span>(t) <span class="c">=</span> (1 / T) <span class="c">&middot;</span> &Sigma;<span class="g">&#8342;</span> B<span class="g">&#11388;</span>(k) <span class="c">&middot;</span> &Delta;<span class="g">&#8342;</span><br><span class="g">a</span><span class="g">&#11388;</span> <span class="c">=</span> &lfloor; Q <span class="c">&middot;</span> B&#772;<span class="g">&#11388;</span> / &Sigma; B&#772;<span class="g">&#8341;</span> &rfloor;</div>
+
+        <div class="twb rv">
+          <div class="h"><span class="nm">Holder A</span>
+            <span class="track"><i class="fill" data-fill="100"></i></span><span class="wt">1.00&times;</span></div>
+          <div class="h"><span class="nm">Holder B</span>
+            <span class="track"><i class="fill t" data-fill="40"></i></span><span class="wt">0.40&times;</span></div>
+          <div class="h"><span class="nm">Sniper</span>
+            <span class="track"><i class="fill" data-fill="8" style="background:linear-gradient(180deg,rgba(196,96,63,.55),rgba(196,96,63,.25));border-left-color:#C4603F"></i></span><span class="wt">0.08&times;</span></div>
+          <div class="axis"><span>:00</span><span>:15</span><span>:30</span><span>:45</span><span>:60</span></div>
+        </div>
+        <p class="rv" style="margin-top:14px;font-size:13.5px;color:var(--label)">Same round, same
+          balance at the close. An address held for six minutes of a sixty&#8209;minute round earns
+          one tenth the weight of an address held throughout.</p>
+      </div>
+
+      <div>
+        <div class="rv"><span class="lbl" style="display:block;margin-bottom:12px">What settlement removes</span>
+        <div class="cards3" style="grid-template-columns:minmax(0,1fr)">
+          <div><h3>No claim transaction</h3><p>The protocol pays gas from the operations share and
+            transfers the asset to you. Nothing expires, nothing strands as dust in a distributor.</p></div>
+          <div><h3>The Merkle root is for proof, not for claiming</h3><p>Each round commits a tree over
+            <code style="font-family:var(--mono);font-size:12.5px;color:var(--copper)">(address, amount)</code>
+            leaves <em>and</em> the complete score table. That second part is what lets a third party
+            verify the winner was actually the winner &mdash; not merely that the payout matched a root
+            someone published.</p></div>
+          <div><h3>Rounding goes nowhere</h3><p>Allocations floor to the smallest representable unit.
+            The remainder is not retained, redirected, or swept to any address &mdash; it carries into
+            the next round's distributable quantity and nets to roughly zero over time.</p></div>
+          <div><h3>Protocol addresses are excluded</h3><p>The pool, the lock contract and the
+            distributor hold no claim on distributions. Including them would route a share of every
+            round back to protocol&#8209;controlled addresses &mdash; the exact leak this design exists
+            to close.</p></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEES ============ -->
+<section id="fees">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">Fee architecture</span><span class="bar"></span></div>
+    <div class="two" style="margin-bottom:clamp(28px,4vw,44px)">
+      <h2 class="disp rv">One 3% fee. Three destinations <span class="it">compiled into bytecode</span></h2>
+      <p class="lede rv">Capture happens inside the v4 hook at swap execution, denominated in WETH.
+        There is no collection transaction, no accrual anyone has to remember to sweep, and no window
+        where captured fees sit in an address a person controls.</p>
+    </div>
+
+    <div class="split rv" id="split">
+      <div class="a" data-w="60"><span class="pc">60%</span><span class="nm">Distribution</span></div>
+      <div class="b" data-w="30"><span class="pc">30%</span><span class="nm">Liquidity</span></div>
+      <div class="c" data-w="10"><span class="pc">10%</span><span class="nm">Operations</span></div>
+    </div>
+
+    <div class="tw rv" style="margin-top:22px">
+      <table>
+        <thead><tr><th style="width:88px">Share</th><th style="width:104px">Of swap</th><th>Destination and constraint</th></tr></thead>
+        <tbody>
+          <tr><td class="mono" style="color:var(--copper)">60%</td><td class="mono">1.80%</td>
+            <td><strong>Hourly acquisition budget.</strong> Funds the round's purchase of the winning instrument. Cannot be redirected; unspent budget rolls forward and is never swept.</td></tr>
+          <tr><td class="mono">30%</td><td class="mono">0.90%</td>
+            <td><strong>Protocol&#8209;owned liquidity.</strong> Paired and deposited to <span class="mono">SwitchLock</span> under a rolling 60&#8209;day lock with no early&#8209;withdrawal path. Deeper POL lowers price impact, which supports larger trades, which grows the fee base.</td></tr>
+          <tr><td class="mono" style="color:var(--patina)">10%</td><td class="mono">0.30%</td>
+            <td><strong>Operations.</strong> Infrastructure, the scoring worker, and gas for every push distribution. This is what makes settlement free at the point of receipt.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="two rv" style="margin-top:clamp(34px,4vw,54px)">
+      <div>
+        <span class="lbl" style="display:block;margin-bottom:14px">Token constraints</span>
+        <div class="trust">
+          <div class="r"><span class="k"><span class="lamp teal"></span><span class="lbl">Supply</span></span><p>1,000,000,000, fixed. No mint function exists.</p></div>
+          <div class="r"><span class="k"><span class="lamp teal"></span><span class="lbl">Max wallet</span></span><p>1.5% of supply, enforced on transfer &mdash; so no address can receive more than roughly 1.5% of any hourly distribution. A fairness mechanism as much as a concentration limit.</p></div>
+          <div class="r"><span class="k"><span class="lamp teal"></span><span class="lbl">Transfer tax</span></span><p>None. Wallet&#8209;to&#8209;wallet transfers are untaxed; the 3% applies only to pool swaps.</p></div>
+          <div class="r"><span class="k"><span class="lamp teal"></span><span class="lbl">Privileged roles</span></span><p>None. No owner, no pauser, no blacklist, no proxy, no implementation pointer.</p></div>
+        </div>
+      </div>
+      <div>
+        <span class="lbl" style="display:block;margin-bottom:14px">The four contracts</span>
+        <div class="tw"><table>
+          <tbody>
+            <tr><td class="mono" style="width:38%;color:var(--copper)">SwitchToken</td><td>ERC&#8209;20. Fixed supply, 1.5% max wallet on transfer. No mint, burn authority, pause, or blacklist.</td></tr>
+            <tr><td class="mono" style="color:var(--copper)">SwitchHook</td><td>Uniswap v4 hook. Captures 3% of each swap in WETH and splits it across three immutable destinations.</td></tr>
+            <tr><td class="mono" style="color:var(--copper)">SwitchLock</td><td>Holds protocol&#8209;owned liquidity under a rolling 60&#8209;day lock. No early&#8209;withdrawal path exists.</td></tr>
+            <tr><td class="mono" style="color:var(--copper)">SwitchRewards</td><td>Merkle distributor. Accepts the hourly root and pushes the round's allocation to holders in batches.</td></tr>
+          </tbody>
+        </table></div>
+        <p class="rv" style="margin-top:16px;font-size:14.2px;color:var(--muted)">Redirecting fees
+          would require deploying a different contract and convincing the market to trade against it
+          &mdash; visible, permissionlessly detectable, and requiring no trust in the original
+          deployment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ECONOMICS ============ -->
+<section id="economics">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">Economics</span><span class="bar"></span></div>
+    <div class="two" style="margin-bottom:clamp(28px,4vw,44px)">
+      <h2 class="disp rv">Distribution scales with volume, <span class="it">not with a promise</span></h2>
+      <p class="lede rv">There is no target APR, because there is no mechanism capable of targeting
+        one. Move the slider: everything below is arithmetic on <span class="mono" style="color:var(--body)">B(t) = 0.018 &middot; Vol(t)</span>,
+        not a projection of what volume will be.</p>
+    </div>
+
+    <div class="plate calc rv">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <div>
+          <span class="lbl" style="display:block;margin-bottom:9px">Assumed daily swap volume</span>
+          <span class="calcv" id="cVol">$1,000,000</span>
+        </div>
+        <span style="max-width:30ch;text-align:right;font-size:13.5px;color:var(--label);line-height:1.55">A number you choose. Switch has no way to forecast it and does not try.</span>
+      </div>
+      <input type="range" id="cRange" min="0" max="1000" value="434" step="1" aria-label="Assumed daily swap volume">
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--label);margin-top:-4px">
+        <span>$50K</span><span>$500K</span><span>$5M</span><span>$50M</span>
+      </div>
+
+      <div class="out">
+        <div><span class="v cu" id="cHour">$750</span><p class="lbl">1.8% &mdash; hourly buy budget</p></div>
+        <div><span class="v" id="cDay">$18,000</span><p class="lbl">1.8% &mdash; across a full day</p></div>
+        <div><span class="v te" id="cPol">$9,000</span><p class="lbl">0.9% &mdash; to locked liquidity</p></div>
+        <div><span class="v" id="cOps">$3,000</span><p class="lbl">0.3% &mdash; operations and gas</p></div>
+      </div>
+      <p style="margin-top:20px;font-size:13.8px;color:var(--label);line-height:1.65;max-width:88ch">Multiplication,
+        not a forecast &mdash; the volume is the one you picked. Quiet hours produce small budgets.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRUST ============ -->
+<section id="trust">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">Trust boundaries</span><span class="bar"></span></div>
+    <div class="two" style="margin-bottom:clamp(26px,3.4vw,42px)">
+      <h2 class="disp rv">Enforced by code, <span class="it">or not at all</span></h2>
+      <p class="lede rv">Most protocols ask you to trust everything at once. Switch separates what
+        the bytecode enforces from what still depends on us, so you always know which one you are
+        looking at.</p>
+    </div>
+    <div class="trust rv">
+      <div class="r"><span class="k"><span class="lamp teal"></span><span class="lbl">Requires no trust</span></span>
+        <p>Fee capture and splitting, the wallet cap, the liquidity lock, supply integrity. Enforced by immutable bytecode with no privileged caller.</p></div>
+      <div class="r"><span class="k"><span class="lamp teal"></span><span class="lbl">Verifiable, not trusted</span></span>
+        <p>Winner selection. The worker computes it, but the inputs and the function are public &mdash; any third party can recompute every historical round and prove a mismatch.</p></div>
+      <div class="r"><span class="k"><span class="lamp on"></span><span class="lbl">Requires trust</span></span>
+        <p>Liveness. If the worker halts, rounds do not execute and budgets accumulate unspent. Funds are not at risk, but distribution pauses. This is the protocol's principal centralisation surface, and Phase 3 is aimed squarely at it.</p></div>
+      <div class="r"><span class="k"><span class="lamp on"></span><span class="lbl">External dependency</span></span>
+        <p>Chainlink price feeds and the underlying tokenized&#8209;equity issuers. Switch does not custody, back, or guarantee the assets it distributes, and inherits the liveness and solvency assumptions of both in full.</p></div>
+      <div class="r"><span class="k"><span class="lamp on"></span><span class="lbl">Accepted by design</span></span>
+        <p>A momentum&#8209;weighted rule buys strength, and will therefore buy local tops &mdash; visibly, on the record. The score floor bounds the worst case per round without eliminating it. The engine optimises for a reproducible rule, not for risk&#8209;adjusted return.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section id="roadmap">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">Roadmap</span><span class="bar"></span></div>
+    <div class="two" style="margin-bottom:clamp(26px,3.4vw,42px)">
+      <h2 class="disp rv">From the first line of code <span class="it">to the first round</span></h2>
+      <p class="lede rv">Milestones for the Switchboard, push settlement, and the public round log.</p>
+    </div>
+    <div class="road rv">
+      <div><div class="dot"></div><div class="ph">Phase 1</div><h3>Foundation</h3>
+        <p>Launch the Switch site and grow the community. Independent audit of all four contracts,
+          published in full. Deployment, liquidity seeding, and the first lock &mdash; with the ticker
+          and every destination address published before launch.</p></div>
+      <div><div class="dot"></div><div class="ph">Phase 2</div><h3>Rounds &amp; the public log</h3>
+        <p>The first hourly rounds run on Robinhood Chain. Every round is published with its complete
+          score table: all eligible instruments, all four components, the winner, the quantity
+          acquired, and the Merkle root. Permanent and machine&#8209;readable.</p></div>
+      <div><div class="dot"></div><div class="ph">Phase 3</div><h3>Open verification</h3>
+        <p>An open&#8209;source client that rebuilds any historical round from public inputs and diffs
+          it against what the protocol actually did. Verification stops being a claim and becomes a
+          command anyone can run.</p></div>
+      <div><div class="dot"></div><div class="ph">Phase 4</div><h3>Distributed workers</h3>
+        <p>Multiple independent workers computing the same deterministic output, with settlement
+          requiring agreement between them. Because the function is deterministic, agreement is a
+          comparison rather than a consensus problem &mdash; and the last centralisation point
+          closes.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq">
+  <div class="shell">
+    <div class="sechead rv"><span class="lbl lbl-c">Questions</span><span class="bar"></span></div>
+    <div class="two" style="margin-bottom:clamp(20px,2.6vw,34px)">
+      <h2 class="disp rv">Straight answers</h2>
+      <p class="lede rv">Including the ones that aren't flattering.</p>
+    </div>
+    <div class="faq rv">
+      <details open><summary>Do I have to stake, lock, or claim anything?</summary>
+        <div class="ans">No. Holding is the entire action. Each round the protocol computes your
+          time&#8209;weighted balance from transfer events, allocates your share of the acquired
+          equity, and transfers it to your address with gas paid from the operations share. You never
+          sign a transaction to receive a distribution.</div></details>
+      <details><summary>What exactly do I receive?</summary>
+        <div class="ans">The tokenized equity that won that hour's round &mdash; whichever instrument
+          scored highest on the published formula. Over many rounds you accumulate a basket, and its
+          breadth is a function of market conditions plus the repeat cap. You do not receive more
+          $SWTCH, which is the whole point.</div></details>
+      <details><summary>Can the team change the weights or redirect the fees?</summary>
+        <div class="ans">No. The three destination addresses are compiled into the hook's bytecode as
+          constants &mdash; not stored in mutable state, not settable after deployment, not reachable
+          by any function. There is no owner, no pauser, and no proxy. Changing anything requires a
+          new deployment, published separately, that holders may ignore.</div></details>
+      <details><summary>What happens in an hour where everything is down?</summary>
+        <div class="ans">If the best composite score falls below <code>S_min</code>, the round buys
+          nothing and the budget rolls into the next round. The same happens if the slippage bound
+          <code>P_exec &le; P_oracle &middot; (1+&epsilon;)</code> can't be met, or if a market&#8209;wide
+          feed outage empties the eligible set. A rolled budget is recoverable; an overpaid fill is not.</div></details>
+      <details><summary>Could I buy right before the hour and collect a full round?</summary>
+        <div class="ans">No. Allocation runs on time&#8209;weighted balance across the whole round, so
+          a position held for six minutes of sixty earns one tenth the weight of one held throughout.
+          The attack isn't detected and blocked &mdash; it simply doesn't pay.</div></details>
+      <details><summary>What's the single biggest risk?</summary>
+        <div class="ans">Worker liveness. If the scoring worker halts, rounds stop executing and
+          budgets accrue unspent in the hook &mdash; capital isn't at risk, but distribution pauses
+          until service resumes. That is the protocol's principal centralisation surface, and Phase 3
+          exists to remove it. Beyond that: the assets distributed are issued by third parties whose
+          solvency and redemption assumptions Switch inherits, and immutability means a discovered
+          flaw cannot be patched.</div></details>
+      <details><summary>What APR should I expect?</summary>
+        <div class="ans">There isn't one, and any number presented as one would be invented.
+          Distribution is <code>0.018 &times; Vol(t)</code> divided across holders by time&#8209;weighted
+          balance. Quiet weeks pay little. The economics section lets you run the arithmetic at any
+          volume you like &mdash; that's arithmetic on an assumption you chose, not a forecast.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="final">
+  <div class="shell" style="position:relative">
+    <h2 class="disp rv" style="font-size:clamp(34px,5.6vw,68px)">Most protocols pay you in their own
+      token, and ask you to claim it.</h2>
+    <p class="lede rv" style="max-width:56ch">Switch pays in assets it did not create, and delivers
+      them while you do nothing.</p>
+    <div class="cta rv">
+      <a class="btn btn-p" data-link="dapp" href="#">Switch to Dapp
+        <svg class="arw" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a class="btn btn-g" data-link="paper" href="#">Read the whitepaper</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="shell">
+    <div class="fgrid">
+      <div>
+        <a class="brand" href="#top" style="margin-bottom:14px" aria-label="Switch — home">
+          <svg viewBox="0 0 128 64" aria-hidden="true">
+            <rect x="4" y="4" width="120" height="56" rx="28" fill="none" stroke="#F2EDE6" stroke-width="8"/>
+            <line x1="28" y1="32" x2="52" y2="32" stroke="#F2EDE6" stroke-width="8" stroke-linecap="round" opacity=".34"/>
+            <line x1="64" y1="32" x2="72" y2="32" stroke="#F2EDE6" stroke-width="8" stroke-linecap="round" opacity=".16"/>
+            <circle class="knob" cx="96" cy="32" r="16" fill="#D9662B"/>
+          </svg>
+          <span class="wm">switch<span style="color:#D9662B">.</span></span>
+        </a>
+        <p style="font-size:14px;color:var(--muted);max-width:34ch">Fees in, equities out, every hour.
+          An autonomous distribution protocol on Robinhood Chain.</p>
+        <div class="socials">
+          <a data-link="x" href="#" aria-label="Switch on X"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2.5h3.3l-7.2 8.2 8.5 11.3h-6.7l-5.2-6.9-6 6.9H2.3l7.7-8.8L1.9 2.5h6.8l4.7 6.3 5.5-6.3Zm-1.2 17.6h1.8L7.3 4.4H5.4l12.3 15.7Z"/></svg></a>
+          <a data-link="tg" href="#" aria-label="Switch on Telegram"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3 18.9 19c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.3.3-.5.5-1 .5l.3-4.7 8.5-7.7c.4-.3-.1-.5-.6-.2L6.9 13l-4.5-1.4c-1-.3-1-1 .2-1.4l17.6-6.8c.8-.3 1.5.2 1.2 1Z"/></svg></a>
+          <a data-link="chart" href="#" aria-label="Chart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15V9M12 15V6M16 15v-4M20 15V8"/></svg></a>
+        </div>
+      </div>
+      <div class="fcol"><h4>Protocol</h4>
+        <a href="#mechanism">Hourly cycle</a><a href="#switchboard">The Switchboard</a>
+        <a href="#settlement">Push settlement</a><a href="#fees">Fee architecture</a>
+        <a href="#economics">Economics</a></div>
+      <div class="fcol"><h4>Resources</h4>
+        <a data-link="paper" href="#">Whitepaper &#8599;</a><a data-link="dapp" href="#">Switch Dapp &#8599;</a>
+        <a data-link="chart" href="#">Chart &#8599;</a><a href="#roadmap">Roadmap</a><a href="#faq">FAQ</a></div>
+      <div class="fcol"><h4>Community</h4>
+        <a data-link="x" href="#">X / Twitter &#8599;</a><a data-link="tg" href="#">Telegram &#8599;</a></div>
+    </div>
+
+    <div class="fdisc">
+      <p>&copy; 2026 Switch Protocol &middot; Whitepaper v1.0</p>
+    </div>
+  </div>
+</footer>
+</main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* Config. "#" renders the button in its pending state;
+   a real URL makes it live. Nothing else to change. */
+var LINKS = {
+  dapp  : "#",                                 /* ← Switch Dapp           */
+  chart : "#",                                 /* ← Dexscreener           */
+
+  paper : "whitepaper.html",                   /* live — sits beside this file */
+  x     : "https://x.com/switchprotocol1",     /* live */
+  tg    : "https://t.me/Switchprotocol1"       /* live */
+};
+
+var CONTRACT = "0x0000000000000000000000000000000000000000";  /* $SWTCH address */
+
+(function(){
+"use strict";
+var RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+var $  = function(s,r){return (r||document).querySelector(s)};
+var $$ = function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
+
+/* ---------- toast ---------- */
+var toastEl = $("#toast"), toastT;
+function toast(msg){
+  toastEl.textContent = msg; toastEl.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(function(){toastEl.classList.remove("show")}, 2600);
+}
+
+/* link wiring */
+var SOON_LABEL = {dapp:"The dapp opens after deployment",
+                  chart:"Chart opens when trading does"};
+$$("[data-link]").forEach(function(el){
+  var k = el.getAttribute("data-link"), url = LINKS[k];
+  var live = url && url !== "#" && url.indexOf("__") !== 0;
+
+  if (live){
+    el.href = url;
+    if (url.indexOf("http") === 0){ el.target = "_blank"; el.rel = "noopener noreferrer"; }
+    el.classList.remove("soon");
+    return;
+  }
+
+  /* pending */
+  if (el.classList.contains("btn") || el.classList.contains("chip")){
+    el.classList.add("soon");
+    if (!el.querySelector(".tagsoon")){
+      var b = document.createElement("span"); b.className = "tagsoon"; b.textContent = "Soon";
+      el.appendChild(b);
+    }
+  } else if (el.closest(".fcol") || el.closest(".mobmenu")){
+    el.classList.add("soonlink");
+    if (!el.querySelector(".tagsoon")){
+      var b2 = document.createElement("span"); b2.className = "tagsoon"; b2.textContent = "Soon";
+      el.appendChild(b2);
+    }
+  }
+  el.setAttribute("aria-disabled", "true");
+  el.addEventListener("click", function(e){
+    e.preventDefault();
+    toast(SOON_LABEL[k] || "Not live yet");
+    /* route to telegram */
+    if (LINKS.tg && LINKS.tg !== "#"){
+      setTimeout(function(){ window.open(LINKS.tg, "_blank", "noopener"); }, 620);
+    }
+  });
+});
+
+/* ---------- contract chip ---------- */
+var caText = $("#caText");
+caText.textContent = CONTRACT.slice(0,6) + "…" + CONTRACT.slice(-4);
+$("#copyCa").addEventListener("click", function(){
+  var done = function(){ toast("Contract address copied") };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(CONTRACT).then(done, function(){ toast("Copy failed") });
+  } else {
+    var t = document.createElement("textarea");
+    t.value = CONTRACT; document.body.appendChild(t); t.select();
+    try{ document.execCommand("copy"); done(); }catch(e){ toast("Copy failed"); }
+    document.body.removeChild(t);
+  }
+});
+
+/* ---------- nav ---------- */
+var nav = $("#nav"), mob = $("#mobmenu"), burger = $("#burger");
+function onScroll(){
+  nav.classList.toggle("stuck", window.scrollY > 18);
+  var h = document.documentElement;
+  var p = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
+  var rp = $("#railProg"); if (rp) rp.style.height = (p*100).toFixed(2) + "%";
+}
+addEventListener("scroll", onScroll, {passive:true}); onScroll();
+burger.addEventListener("click", function(){
+  var open = mob.classList.toggle("open");
+  burger.setAttribute("aria-expanded", open ? "true" : "false");
+});
+$$("#mobmenu a").forEach(function(a){ a.addEventListener("click", function(){
+  mob.classList.remove("open"); burger.setAttribute("aria-expanded","false");
+});});
+
+/* ---------- left bus rail ---------- */
+var SECTIONS = [["console","Switchboard"],["problem","The problem"],["mechanism","Hourly cycle"],
+  ["switchboard","Selection"],["settlement","Settlement"],["fees","Fees"],
+  ["economics","Economics"],["trust","Trust"],["roadmap","Roadmap"],["faq","FAQ"]];
+var nodesWrap = $("#railNodes"), nodeEls = {};
+SECTIONS.forEach(function(s){
+  var a = document.createElement("a");
+  a.className = "node"; a.href = "#" + s[0]; a.setAttribute("aria-label", s[1]);
+  a.innerHTML = '<span>' + s[1] + '</span>';
+  nodesWrap.appendChild(a); nodeEls[s[0]] = a;
+});
+var secObs = new IntersectionObserver(function(es){
+  es.forEach(function(e){
+    if (!e.isIntersecting) return;
+    for (var k in nodeEls) nodeEls[k].classList.remove("on");
+    if (nodeEls[e.target.id]) nodeEls[e.target.id].classList.add("on");
+  });
+}, {rootMargin:"-45% 0px -50% 0px"});
+SECTIONS.forEach(function(s){ var el = document.getElementById(s[0]); if (el) secObs.observe(el); });
+
+/* ---------- scroll reveal + one-shot bar fills ---------- */
+var revObs = new IntersectionObserver(function(es){
+  es.forEach(function(e){
+    if (!e.isIntersecting) return;
+    e.target.classList.add("in");
+    revObs.unobserve(e.target);
+    $$("[data-w]", e.target).forEach(function(el,i){
+      setTimeout(function(){ el.style.width = el.getAttribute("data-w") + "%" }, RM ? 0 : 90 + i*70);
+    });
+    $$("[data-fill]", e.target).forEach(function(el,i){
+      setTimeout(function(){ el.style.width = el.getAttribute("data-fill") + "%" }, RM ? 0 : 120 + i*110);
+    });
+  });
+}, {rootMargin:"0px 0px -8% 0px", threshold:.08});
+$$(".rv").forEach(function(el,i){
+  el.style.transitionDelay = (RM ? 0 : (i % 4) * 55) + "ms";
+  revObs.observe(el);
+});
+
+/* ---------- round clock (real time to the next UTC hour) ---------- */
+var pad = function(n){ return n < 10 ? "0"+n : ""+n };
+var navClock = $("#navClock"), dClock = $("#dClock"), rbar = $("#roundbar i");
+function tickClock(){
+  var now = new Date();
+  var elapsed = now.getUTCMinutes()*60 + now.getUTCSeconds();
+  var left = 3600 - elapsed;
+  var s = pad(Math.floor(left/60)) + ":" + pad(left % 60);
+  navClock.textContent = s; dClock.textContent = s;
+  rbar.style.width = (elapsed/3600*100).toFixed(3) + "%";
+}
+tickClock(); setInterval(tickClock, 1000);
+
+/* ---------- eligible-universe ticker ---------- */
+var UNIVERSE = [
+  ["NVDA","NVIDIA"],["AAPL","Apple"],["TSLA","Tesla"],["MSFT","Microsoft"],["AMZN","Amazon"],
+  ["META","Meta"],["GOOGL","Alphabet"],["AMD","AMD"],["NFLX","Netflix"],["COIN","Coinbase"],
+  ["HOOD","Robinhood"],["AVGO","Broadcom"],["PLTR","Palantir"],["SPY","S&P 500"],["QQQ","Nasdaq 100"],
+  ["MSTR","Strategy"],["UBER","Uber"],["SHOP","Shopify"]
+];
+var tickRow = $("#tickRow"), tickHTML = "";
+function tickerCell(t){
+  /* names only, no price data */
+  return '<span class="t"><b>'+t[0]+'</b><span>'+t[1]+'</span></span>';
+}
+UNIVERSE.forEach(function(t){ tickHTML += tickerCell(t) });
+tickRow.innerHTML = tickHTML + tickHTML;   /* ---------- Switchboard console (simulated) ---------- */
+var PRICES = {NVDA:181,AAPL:243,TSLA:412,MSFT:508,AMZN:229,META:701,GOOGL:198,AMD:164,
+  NFLX:889,COIN:311,HOOD:94,AVGO:242,PLTR:158,SPY:642,QQQ:571,MSTR:326,UBER:87,SHOP:129};
+var rowsEl=$("#dRows"), roundEl=$("#dRound"), budgetEl=$("#dBudget"), countEl=$("#dCount"),
+    winTk=$("#dWinTk"), winNm=$("#dWinNm"), winS=$("#dWinS"), winB=$("#dWinB"), winQ=$("#dWinQ"),
+    winE=$("#dWinE"), pushEl=$("#dPush"), holdEl=$("#dHold"), pushedEl=$("#dPushed"),
+    rootEl=$("#dRoot"), stateEl=$("#dSetState"), sparkEl=$("#dSpark"), d24El=$("#d24"),
+    recentEl=$("#dRecent");
+
+var roundNo = 0, budget = 0, batches = 8, visible = true, prevWinner = null, recent = [];
+var usd = function(n){
+  if (n >= 1e6) return "$" + (n/1e6).toFixed(2) + "M";
+  if (n >= 1e3) return "$" + Math.round(n).toLocaleString("en-US");
+  return "$" + n.toFixed(0);
+};
+function hex(n){ var s="0x", c="0123456789abcdef";
+  for (var i=0;i<n;i++) s += c[(Math.random()*16)|0]; return s; }
+function z(){ /* clamped normal */
+  var u=0,v=0; while(!u) u=Math.random(); while(!v) v=Math.random();
+  var g = Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  return Math.max(-3, Math.min(3, g));
+}
+
+/* 24-round distribution history */
+var hist = [];
+for (var i=0;i<24;i++) hist.push(320 + Math.random()*680);
+function drawSpark(){
+  var mx = Math.max.apply(null, hist), h = "";
+  hist.forEach(function(v,i){
+    h += '<i class="'+(i===hist.length-1?"hot":"")+'" style="height:'+Math.max(8,(v/mx*100))+'%"></i>';
+  });
+  sparkEl.innerHTML = h;
+}
+
+function newRound(){
+  roundNo++;
+  budget = 240 + Math.random()*1400;
+
+  /* score the eligible set */
+  var pool = UNIVERSE.slice().sort(function(){ return Math.random()-.5 }).slice(0, 9 + ((Math.random()*4)|0));
+  var rows = pool.map(function(t){
+    var zm=z(), zp=z(), zv=z(), zs=z();
+    var c = {m:0.40*zm, p:0.35*zp, v:0.15*zv, s:-0.10*zs};
+    return {tk:t[0], nm:t[1], c:c, S:c.m+c.p+c.v+c.s};
+  }).sort(function(a,b){ return b.S - a.S });
+
+  /* repeat cap */
+  if (prevWinner && rows[0].tk === prevWinner && rows.length > 1) rows.push(rows.shift());
+  prevWinner = rows[0].tk;
+
+  var hi = rows[0].S, lo = rows[rows.length-1].S, span = Math.max(.001, hi-lo);
+  var html = "";
+  rows.forEach(function(r,i){
+    var len = 14 + 86 * ((r.S - lo)/span);
+    var mag = Math.abs(r.c.m)+Math.abs(r.c.p)+Math.abs(r.c.v)+Math.abs(r.c.s);
+    var seg = function(k,cl){ return '<i class="'+cl+'" style="width:'+(Math.abs(r.c[k])/mag*100).toFixed(1)+'%"></i>' };
+    var shown = Math.abs(r.S) < 0.005 ? 0 : r.S;   html += '<div class="srow'+(i===0?" win":"")+'">' +
+      '<span class="rk">'+(i+1)+'</span>' +
+      '<span class="tk">'+r.tk+'</span>' +
+      '<span class="stack" style="width:'+len.toFixed(1)+'%">'+seg("m","m")+seg("p","p")+seg("v","v")+seg("s","s")+'</span>' +
+      '<span class="sc">'+(shown>=0?"+":"−")+Math.abs(shown).toFixed(2)+'</span></div>';
+  });
+  rowsEl.innerHTML = html;
+  countEl.textContent = rows.length + " instruments";
+  roundEl.textContent = "#" + ("000" + roundNo).slice(-4);
+
+  /* winner card */
+  var w = rows[0], px = PRICES[w.tk] || 100;
+  winTk.textContent = w.tk; winNm.textContent = w.nm;
+  winS.textContent = w.S.toFixed(2);
+  winB.textContent = usd(budget);
+  winQ.textContent = (budget/px).toFixed(3) + " " + w.tk;
+  winE.textContent = "−" + (Math.random()*0.14).toFixed(2) + "% vs oracle";
+
+  /* settlement */
+  batches = 6 + ((Math.random()*5)|0);
+  holdEl.textContent = batches + " × transfer";
+  rootEl.textContent = hex(6) + "…" + hex(4);
+  stateEl.textContent = "SETTLING"; stateEl.style.color = "var(--copper)";
+  pushEl.style.width = "0%"; pushedEl.textContent = "0%";
+  var step = 0;
+  var pump = setInterval(function(){
+    step += 0.11 + Math.random()*0.14;
+    if (step >= 1){
+      step = 1; clearInterval(pump);
+      stateEl.textContent = "SETTLED"; stateEl.style.color = "var(--patina)";
+    }
+    pushEl.style.width = (step*100).toFixed(1) + "%";
+    pushedEl.textContent = Math.round(step*100) + "%";
+  }, 320);
+
+  /* recent winners strip */
+  recent.unshift(w.tk); if (recent.length > 6) recent.pop();
+  recentEl.innerHTML = "<b>Last rounds</b>" + recent.map(function(t,i){
+    return '<span class="'+(i===0?"new":"")+'">'+t+'</span>';
+  }).join("");
+
+  hist.push(budget); hist.shift(); drawSpark();
+
+  if (!RM){                               /* round sweep */
+    var panel = $(".console");            if (panel){ panel.classList.remove("landed"); void panel.offsetWidth;
+                panel.classList.add("landed"); }
+  }
+}
+
+/* budget accrues between rounds */
+setInterval(function(){
+  if (!visible) return;
+  budget += 0.4 + Math.random()*3.6;
+  budgetEl.textContent = usd(budget);
+}, 900);
+
+var cons = $("#console");
+new IntersectionObserver(function(es){ visible = es[0].isIntersecting }, {threshold:0}).observe(cons);
+drawSpark(); newRound();
+setInterval(function(){ if (visible) newRound() }, 7600);
+
+/* ---------- economics calculator ---------- */
+var rng=$("#cRange"), cVol=$("#cVol"), cHour=$("#cHour"), cDay=$("#cDay"), cPol=$("#cPol"), cOps=$("#cOps");
+function money(n){
+  if (n >= 1e9) return "$" + (n/1e9).toFixed(2) + "B";
+  if (n >= 1e6) return "$" + (n/1e6).toFixed(2) + "M";
+  if (n >= 1e4) return "$" + Math.round(n).toLocaleString("en-US");
+  return "$" + Math.round(n).toLocaleString("en-US");
+}
+function calc(){
+  var t = +rng.value / 1000;
+  var vol = 5e4 * Math.pow(1000, t);            /* log scale */
+  var day = 0.018 * vol, pol = 0.009 * vol, ops = 0.003 * vol;
+  cVol.textContent  = "$" + Math.round(vol).toLocaleString("en-US");
+  cHour.textContent = money(day/24);
+  cDay.textContent  = money(day);
+  cPol.textContent  = money(pol);
+  cOps.textContent  = money(ops);
+}
+rng.addEventListener("input", calc); calc();
+
+
+/* motion */
+
+/* split headings into words */
+function splitWords(el){
+  (function walk(node){
+    [].slice.call(node.childNodes).forEach(function(n){
+      if (n.nodeType === 3){
+        if (!n.textContent.trim()) return;
+        var frag = document.createDocumentFragment();
+        n.textContent.split(/(\s+)/).forEach(function(tok){
+          if (!tok) return;
+          if (/^\s+$/.test(tok)){ frag.appendChild(document.createTextNode(tok)); return; }
+          var w = document.createElement("span"); w.className = "wd";
+          var i = document.createElement("i"); i.textContent = tok;
+          w.appendChild(i); frag.appendChild(w);
+        });
+        n.parentNode.replaceChild(frag, n);
+      } else if (n.nodeType === 1 && n.tagName !== "BR" && !n.classList.contains("wd")){
+        walk(n);
+      }
+    });
+  })(el);
+  $$(".wd>i", el).forEach(function(i, k){
+    i.style.transitionDelay = (RM ? 0 : k * 42) + "ms";
+  });
+}
+if (!RM) $$("h2.disp").forEach(splitWords);
+
+/* stat counters */
+function countUp(el, to, dec, dur){
+  var t0 = 0;
+  function step(t){
+    if (!t0) t0 = t;
+    var p = Math.min(1, (t - t0) / dur);
+    el.textContent = (to * (1 - Math.pow(1 - p, 3))).toFixed(dec);
+    if (p < 1) requestAnimationFrame(step); else el.textContent = to.toFixed(dec);
+  }
+  requestAnimationFrame(step);
+}
+$$(".strip .st>div:first-child").forEach(function(box){
+  var node = box.firstChild;                       if (!node || node.nodeType !== 3) return;
+  var raw = node.textContent.trim(), to = parseFloat(raw);
+  if (!isFinite(to) || to === 0) return;           /* skip zeros */
+  var dec = (raw.split(".")[1] || "").length;
+  var span = document.createElement("span");
+  span.textContent = RM ? raw : to.toFixed(dec).replace(/[0-9]/g, "0");
+  box.replaceChild(span, node);
+  if (RM) return;
+  new IntersectionObserver(function(es, o){
+    if (!es[0].isIntersecting) return;
+    o.disconnect(); countUp(span, to, dec, 1100);
+  }, {threshold:.6}).observe(box);
+});
+
+/* parallax */
+var ghost = $(".ghost"), hero = $(".hero"), ticking = false;
+function parallax(){
+  ticking = false;
+  if (!ghost || !hero) return;
+  var r = hero.getBoundingClientRect();
+  if (r.bottom < 0 || r.top > innerHeight) return;
+  ghost.style.transform = "translate3d(0," + (-r.top * 0.09).toFixed(1) + "px,0)";
+}
+if (!RM && ghost){
+  addEventListener("scroll", function(){
+    if (!ticking){ ticking = true; requestAnimationFrame(parallax); }
+  }, {passive:true});
+  parallax();
+}
+
+/* console spotlight */
+var consoleEl = $(".console");
+if (consoleEl && !RM && matchMedia("(pointer:fine)").matches){
+  consoleEl.addEventListener("pointermove", function(e){
+    var r = consoleEl.getBoundingClientRect();
+    consoleEl.style.setProperty("--mx", ((e.clientX - r.left) / r.width * 100).toFixed(1) + "%");
+    consoleEl.style.setProperty("--my", ((e.clientY - r.top) / r.height * 100).toFixed(1) + "%");
+  }, {passive:true});
+}
+
+/* ---------- keep the deep links honest ---------- */
+$$('a[href^="#"]').forEach(function(a){
+  a.addEventListener("click", function(){
+    var id = a.getAttribute("href").slice(1);
+    if (id && !document.getElementById(id) && id !== "top") toast("Section not found");
+  });
+});
+})();
+</script>
+
+</body>
+</html>
